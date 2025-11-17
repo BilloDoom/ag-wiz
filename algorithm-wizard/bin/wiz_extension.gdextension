@@ -1,0 +1,11 @@
+[configuration]
+entry_symbol = "wiz_extension_init"
+compatibility_minimum = 4.5
+
+[libraries]
+windows.debug = "res://bin/wiz_extension.dll"
+windows.release = "res://bin/wiz_extension.dll"
+linux.debug = "res://bin/libwiz_extension.so"
+linux.release = "res://bin/libwiz_extension.so"
+macos.debug = "res://bin/libwiz_extension.dylib"
+macos.release = "res://bin/libwiz_extension.dylib"
