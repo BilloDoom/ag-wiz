@@ -11,5 +11,6 @@ config_version=5
 [application]
 
 config/name="AlgorithmWizard"
+run/main_scene="uid://b8vcvqvsef4uu"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"

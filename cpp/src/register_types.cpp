@@ -3,6 +3,8 @@
 #include <godot_cpp/core/defs.hpp>
 
 #include "hello_node.hpp"
+#include "script_runtime.hpp"
+#include "data_buffer.hpp"
 
 using namespace godot;
 
@@ -12,6 +14,8 @@ void initialize_wiz_extension(ModuleInitializationLevel p_level) {
     }
 
     ClassDB::register_class<HelloNode>();
+    ClassDB::register_class<ScriptRuntime>();
+    ClassDB::register_class<DataBuffer>();
 }
 
 void uninitialize_wiz_extension(ModuleInitializationLevel p_level) {
