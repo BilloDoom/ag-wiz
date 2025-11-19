@@ -5,21 +5,35 @@
 #include "hello_node.hpp"
 #include "script_runtime.hpp"
 #include "data_buffer.hpp"
+#include "viewport_bridge.hpp"
 
 using namespace godot;
+
+static bool is_registered = false;
 
 void initialize_wiz_extension(ModuleInitializationLevel p_level) {
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
         return;
     }
 
+    if (is_registered) {
+        return;
+    }
+
     ClassDB::register_class<HelloNode>();
     ClassDB::register_class<ScriptRuntime>();
     ClassDB::register_class<DataBuffer>();
+    ClassDB::register_class<ViewportBridge>();
+
+    is_registered = true;
 }
 
 void uninitialize_wiz_extension(ModuleInitializationLevel p_level) {
-    // Nothing to clean up
+    if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+        return;
+    }
+    
+    is_registered = false;
 }
 
 extern "C" {

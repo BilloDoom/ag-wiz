@@ -1,0 +1,33 @@
+[gd_scene load_steps=6 format=3 uid="uid://c7edo7108vlb0"]
+
+[ext_resource type="Script" uid="uid://bra2uqn87ggj4" path="res://scripts/camera_3d_setup.gd" id="1_e25gh"]
+[ext_resource type="Shader" uid="uid://ded5f2p27ag5f" path="res://shaders/sky.gdshader" id="1_pcwtv"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l06f4"]
+shader = ExtResource("1_pcwtv")
+shader_parameter/background_color = Color(0.15, 0.15, 0.15, 1)
+shader_parameter/ambient_intensity = 0.770000036575
+
+[sub_resource type="Sky" id="Sky_bfu0d"]
+sky_material = SubResource("ShaderMaterial_l06f4")
+
+[sub_resource type="Environment" id="Environment_iwhwg"]
+background_mode = 2
+sky = SubResource("Sky_bfu0d")
+tonemap_mode = 2
+glow_enabled = true
+
+[node name="3DViewport" type="SubViewport"]
+size = Vector2i(642, 442)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+script = ExtResource("1_e25gh")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_iwhwg")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="RenderRoot" type="Node3D" parent="."]

@@ -11,6 +11,16 @@ config_version=5
 [application]
 
 config/name="AlgorithmWizard"
+config/version="0.1B"
 run/main_scene="uid://b8vcvqvsef4uu"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://baworexhgpvrv"
+
+[autoload]
+
+ViewportManager="*res://scripts/viewport_manager.gd"
+
+[rendering]
+
+anti_aliasing/quality/msaa_2d=1
+anti_aliasing/quality/msaa_3d=1
