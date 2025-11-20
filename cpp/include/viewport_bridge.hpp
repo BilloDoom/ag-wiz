@@ -31,6 +31,8 @@ public:
     // Viewport management
     bool init_3d_scene(const String& id, const Dictionary& settings);
     bool init_2d_scene(const String& id, const Dictionary& settings);
+    bool configure_viewport(const String& id, const String& viewport_type, const Dictionary& settings);
+    bool decouple_viewport(const String& id);
     void toggle_floating(const String& id);
     void close_viewport(const String& id);
     Node* get_render_root(const String& id);

@@ -76,6 +76,75 @@ func create_viewport(id: String, viewport_type: String, settings: Dictionary = {
 	print("ViewportManager: Created viewport '%s' (%s)" % [id, viewport_type])
 	return holder
 
+func create_empty_viewport(id: String) -> ViewportHolder:
+	"""Create an empty viewport holder without configuring 3D/2D yet"""
+
+	# Check if ID already exists
+	if holders.has(id):
+		push_error("ViewportManager: Viewport with ID '%s' already exists" % id)
+		return holders[id]
+
+	# Check viewport limit
+	if holders.size() >= MAX_VIEWPORTS:
+		push_error("ViewportManager: Maximum of %d viewports reached" % MAX_VIEWPORTS)
+		return null
+
+	# Instantiate holder from scene
+	var holder = ViewportHolderScene.instantiate()
+	holder.name = "ViewportHolder_" + id
+	holders[id] = holder
+
+	# Add to grid (always embedded initially) - this triggers _ready()
+	embedded_grid.add_child(holder)
+
+	# Connect signals (after adding to tree)
+	holder.close_requested.connect(_on_holder_close_requested)
+	holder.float_requested.connect(_on_holder_float_requested)
+
+	# Set the ID (after _ready() has been called)
+	holder.set_holder_id(id)
+
+	print("ViewportManager: Created empty viewport holder '%s'" % id)
+	return holder
+
+func configure_viewport(id: String, viewport_type: String, settings: Dictionary = {}) -> bool:
+	"""Configure an existing empty viewport with 3D/2D settings"""
+
+	if not holders.has(id):
+		push_error("ViewportManager: Viewport '%s' not found" % id)
+		return false
+
+	# Validate viewport type
+	if viewport_type != "3d" and viewport_type != "2d":
+		push_error("ViewportManager: Invalid viewport type '%s'. Use '3d' or '2d'" % viewport_type)
+		return false
+
+	var holder = holders[id]
+
+	# Setup viewport with type and settings (automatically decouples existing scene)
+	holder.setup(id, viewport_type, settings)
+
+	# Handle floating if requested
+	var should_float = settings.get("floating", false)
+	if should_float and not holder.is_floating:
+		_make_floating(id)
+
+	print("ViewportManager: Configured viewport '%s' as %s" % [id, viewport_type])
+	return true
+
+func decouple_viewport(id: String) -> bool:
+	"""Remove the 3D/2D scene from a viewport, keeping the holder alive"""
+
+	if not holders.has(id):
+		push_error("ViewportManager: Viewport '%s' not found" % id)
+		return false
+
+	var holder = holders[id]
+	holder.decouple_viewport()
+
+	print("ViewportManager: Decoupled viewport '%s'" % id)
+	return true
+
 func toggle_floating(id: String):
 	"""Toggle viewport between embedded and floating"""
 	if not holders.has(id):
@@ -199,6 +268,11 @@ func _make_floating(id: String):
 
 	# Add holder to window
 	window.add_child(holder)
+
+	# Make holder fill the entire window
+	holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	# Track window
 	floating_windows[id] = window

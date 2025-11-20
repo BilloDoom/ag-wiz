@@ -36,8 +36,37 @@ func _ready():
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
 
+func set_holder_id(id: String):
+	"""Set the holder ID and update label"""
+	holder_id = id
+	if id_label:
+		id_label.text = id
+
+func decouple_viewport():
+	"""Remove the current 3D/2D scene from this holder, keeping the holder alive"""
+	# Remove camera controller
+	if camera_controller:
+		camera_controller.queue_free()
+		camera_controller = null
+
+	# Remove viewport scene
+	if viewport_scene:
+		viewport_scene.queue_free()
+		viewport_scene = null
+
+	# Clear references
+	render_root = null
+	camera = null
+	is_3d = false
+
+	print("ViewportHolder '%s': Decoupled viewport scene" % holder_id)
+
 func setup(id: String, viewport_type: String, settings: Dictionary):
 	"""Initialize viewport with given ID, type ('3d' or '2d'), and settings"""
+	# Decouple any existing viewport first (allows switching 3D <-> 2D)
+	if viewport_scene:
+		decouple_viewport()
+
 	holder_id = id
 	is_3d = (viewport_type == "3d")
 

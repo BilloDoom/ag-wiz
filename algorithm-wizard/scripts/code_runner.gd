@@ -1,9 +1,9 @@
 extends Node
 
-@onready var run_btn: Button = $"../Panel/RunBtn"
-@onready var compile_btn: Button = $"../Panel/CompileBtn"
-@onready var code_edit: CodeEdit = $"../Panel/CodeEdit"
-@onready var debug_panel = $"../DebugPanel"
+@export var run_btn: Button
+@export var compile_btn: Button
+@export var code_edit: CodeEdit
+@export var debug_panel: Node
 
 var script_runtime: ScriptRuntime
 var viewport_bridge: ViewportBridge

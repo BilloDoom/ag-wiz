@@ -1,9 +1,11 @@
-[gd_scene load_steps=4 format=3 uid="uid://b8vcvqvsef4uu"]
+[gd_scene load_steps=6 format=3 uid="uid://b8vcvqvsef4uu"]
 
+[ext_resource type="Script" uid="uid://drvw6ox4hws7u" path="res://scripts/main_window.gd" id="1_ax7xg"]
 [ext_resource type="Script" uid="uid://bneqx57s2f3c5" path="res://scripts/debug_panel.gd" id="1_lp381"]
 [ext_resource type="Script" uid="uid://cqqbtntb7ce5v" path="res://scripts/code_runner.gd" id="2_ax7xg"]
+[ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="4_ax7xg"]
 
-[sub_resource type="CodeHighlighter" id="CodeHighlighter_tyee0"]
+[sub_resource type="CodeHighlighter" id="CodeHighlighter_lp381"]
 number_color = Color(0.50980395, 0.8, 0.70980394, 1)
 symbol_color = Color(0.5882353, 0.6901961, 0.8745098, 1)
 function_color = Color(0.33333334, 0.73333335, 0.81960785, 1)
@@ -15,19 +17,28 @@ keyword_colors = {
 "while": Color(0.84313726, 0.46666667, 0.6784314, 1)
 }
 
-[node name="MainWindow" type="Control"]
+[node name="MainWindow" type="Control" node_paths=PackedStringArray("add_viewport_btn", "viewport_grid")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("4_ax7xg")
+script = ExtResource("1_ax7xg")
+add_viewport_btn = NodePath("Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer/AddViewportBtn")
+viewport_grid = NodePath("Panel/VSplitContainer/HSplitContainer/HBoxContainer/PanelContainer/GridContainer")
 
-[node name="DebugPanel" type="Node" parent="."]
+[node name="DebugPanel" type="Node" parent="." node_paths=PackedStringArray("rich_text_output")]
 script = ExtResource("1_lp381")
+rich_text_output = NodePath("../Panel/VSplitContainer/VBoxContainer/Panel/RichTextOutput")
 
-[node name="CodeRunner" type="Node" parent="."]
+[node name="CodeRunner" type="Node" parent="." node_paths=PackedStringArray("run_btn", "compile_btn", "code_edit", "debug_panel")]
 script = ExtResource("2_ax7xg")
+run_btn = NodePath("../Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer/RunBtn")
+compile_btn = NodePath("../Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer/CompileBtn")
+code_edit = NodePath("../Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/CodeEdit")
+debug_panel = NodePath("../DebugPanel")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -37,41 +48,65 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RunBtn" type="Button" parent="Panel"]
+[node name="VSplitContainer" type="VSplitContainer" parent="Panel"]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -86.0
-offset_top = 17.0
-offset_right = -14.0
-offset_bottom = 59.0
-grow_horizontal = 0
-text = "Run"
-
-[node name="CompileBtn" type="Button" parent="Panel"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -172.0
-offset_top = 18.0
-offset_right = -100.0
-offset_bottom = 60.0
-grow_horizontal = 0
-text = "Compile"
-
-[node name="CodeEdit" type="CodeEdit" parent="Panel"]
-layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -441.0
-offset_top = 80.0
-offset_bottom = -149.0
-grow_horizontal = 0
+grow_horizontal = 2
 grow_vertical = 2
+dragger_visibility = 2
+drag_area_offset = 2
+
+[node name="HSplitContainer" type="HSplitContainer" parent="Panel/VSplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 660
+dragger_visibility = 2
+drag_area_offset = -1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VSplitContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Panel/VSplitContainer/HSplitContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GridContainer" type="GridContainer" parent="Panel/VSplitContainer/HSplitContainer/HBoxContainer/PanelContainer"]
+layout_mode = 2
+columns = 3
+
+[node name="VSeparator" type="VSeparator" parent="Panel/VSplitContainer/HSplitContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="PanelContainer2" type="PanelContainer" parent="Panel/VSplitContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="RunBtn" type="Button" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Run"
+
+[node name="CompileBtn" type="Button" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Compile"
+
+[node name="AddViewportBtn" type="Button" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Add window"
+
+[node name="HSeparator" type="HSeparator" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer"]
+layout_mode = 2
+
+[node name="CodeEdit" type="CodeEdit" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
 text = "for i in range(2):
 	print(i)
 
@@ -92,7 +127,8 @@ print(\"exit\")
 
 "
 placeholder_text = "code"
-syntax_highlighter = SubResource("CodeHighlighter_tyee0")
+minimap_draw = true
+syntax_highlighter = SubResource("CodeHighlighter_lp381")
 highlight_current_line = true
 draw_tabs = true
 gutters_draw_breakpoints_gutter = true
@@ -104,17 +140,18 @@ gutters_draw_fold_gutter = true
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
 
-[node name="Panel" type="Panel" parent="Panel"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -133.0
-grow_horizontal = 2
-grow_vertical = 0
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/VSplitContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
 
-[node name="RichTextLabel" type="RichTextLabel" parent="Panel/Panel"]
+[node name="HSeparator" type="HSeparator" parent="Panel/VSplitContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="Panel/VSplitContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RichTextOutput" type="RichTextLabel" parent="Panel/VSplitContainer/VBoxContainer/Panel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -122,13 +159,3 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "output"
-
-[node name="ViewportContainer" type="PanelContainer" parent="Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -479.0
-offset_bottom = -156.0
-grow_horizontal = 2
-grow_vertical = 2

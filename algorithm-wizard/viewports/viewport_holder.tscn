@@ -28,10 +28,6 @@ layout_mode = 2
 [node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer/TitleBar"]
 layout_mode = 2
 
-[node name="IDLabel" type="Label" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
-layout_mode = 2
-text = "ID"
-
 [node name="FloatBtn" type="Button" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
 layout_mode = 2
 text = "Float"
@@ -39,6 +35,10 @@ text = "Float"
 [node name="CloseBtn" type="Button" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
 layout_mode = 2
 text = "Close"
+
+[node name="IDLabel" type="Label" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
+layout_mode = 2
+text = "ID"
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2

@@ -9,6 +9,8 @@ void ViewportBridge::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_viewport_manager_path", "path"), &ViewportBridge::set_viewport_manager_path);
     ClassDB::bind_method(D_METHOD("init_3d_scene", "id", "settings"), &ViewportBridge::init_3d_scene);
     ClassDB::bind_method(D_METHOD("init_2d_scene", "id", "settings"), &ViewportBridge::init_2d_scene);
+    ClassDB::bind_method(D_METHOD("configure_viewport", "id", "viewport_type", "settings"), &ViewportBridge::configure_viewport);
+    ClassDB::bind_method(D_METHOD("decouple_viewport", "id"), &ViewportBridge::decouple_viewport);
     ClassDB::bind_method(D_METHOD("toggle_floating", "id"), &ViewportBridge::toggle_floating);
     ClassDB::bind_method(D_METHOD("close_viewport", "id"), &ViewportBridge::close_viewport);
     ClassDB::bind_method(D_METHOD("get_render_root", "id"), &ViewportBridge::get_render_root);
@@ -71,6 +73,38 @@ bool ViewportBridge::init_2d_scene(const String& id, const Dictionary& settings)
         return result.operator Object*() != nullptr;
     } else {
         UtilityFunctions::printerr("ViewportBridge: ViewportManager missing create_viewport method");
+        return false;
+    }
+}
+
+bool ViewportBridge::configure_viewport(const String& id, const String& viewport_type, const Dictionary& settings) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return false;
+    }
+
+    // Call ViewportManager.configure_viewport(id, viewport_type, settings)
+    if (manager->has_method("configure_viewport")) {
+        Variant result = manager->call("configure_viewport", id, viewport_type, settings);
+        return result.operator bool();
+    } else {
+        UtilityFunctions::printerr("ViewportBridge: ViewportManager missing configure_viewport method");
+        return false;
+    }
+}
+
+bool ViewportBridge::decouple_viewport(const String& id) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return false;
+    }
+
+    // Call ViewportManager.decouple_viewport(id)
+    if (manager->has_method("decouple_viewport")) {
+        Variant result = manager->call("decouple_viewport", id);
+        return result.operator bool();
+    } else {
+        UtilityFunctions::printerr("ViewportBridge: ViewportManager missing decouple_viewport method");
         return false;
     }
 }
@@ -204,6 +238,46 @@ void ViewportBridge::setup_python_bindings() {
 
             return bridge->init_2d_scene(String(id.c_str()), godot_dict);
         }, "Create a 2D viewport", py::arg("id"), py::arg("settings") = py::dict());
+
+        godot_module.def("configure_viewport", [bridge](const std::string& id, const std::string& viewport_type, py::dict settings) {
+            Dictionary godot_dict;
+
+            // Convert Python dict to Godot Dictionary
+            for (auto item : settings) {
+                std::string key = py::str(item.first);
+                py::object value = item.second.cast<py::object>();
+
+                if (py::isinstance<py::bool_>(value)) {
+                    godot_dict[String(key.c_str())] = value.cast<bool>();
+                } else if (py::isinstance<py::int_>(value)) {
+                    godot_dict[String(key.c_str())] = value.cast<int64_t>();
+                } else if (py::isinstance<py::float_>(value)) {
+                    godot_dict[String(key.c_str())] = value.cast<double>();
+                } else if (py::isinstance<py::str>(value)) {
+                    godot_dict[String(key.c_str())] = String(value.cast<std::string>().c_str());
+                } else if (py::isinstance<py::tuple>(value)) {
+                    py::tuple tuple = value.cast<py::tuple>();
+                    if (tuple.size() == 3) {
+                        godot_dict[String(key.c_str())] = Vector3(
+                            tuple[0].cast<double>(),
+                            tuple[1].cast<double>(),
+                            tuple[2].cast<double>()
+                        );
+                    } else if (tuple.size() == 2) {
+                        godot_dict[String(key.c_str())] = Vector2(
+                            tuple[0].cast<double>(),
+                            tuple[1].cast<double>()
+                        );
+                    }
+                }
+            }
+
+            return bridge->configure_viewport(String(id.c_str()), String(viewport_type.c_str()), godot_dict);
+        }, "Configure an existing viewport as 3d or 2d", py::arg("id"), py::arg("viewport_type"), py::arg("settings") = py::dict());
+
+        godot_module.def("decouple_viewport", [bridge](const std::string& id) {
+            return bridge->decouple_viewport(String(id.c_str()));
+        }, "Remove the 3D/2D scene from a viewport, keeping the holder alive");
 
         godot_module.def("toggle_floating", [bridge](const std::string& id) {
             bridge->toggle_floating(String(id.c_str()));
