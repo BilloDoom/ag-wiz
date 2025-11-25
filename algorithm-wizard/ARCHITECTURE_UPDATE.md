@@ -43,13 +43,13 @@ Your current scene needs to be updated to match this structure:
 ```
 ViewportHolder (Control) [viewport_holder.gd attached]
 └── PanelContainer
-    └── VBoxContainer
-        ├── TitleBar (PanelContainer)
-        │   └── HBoxContainer
-        │       ├── IDLabel (Label)
-        │       ├── FloatButton (Button)
-        │       └── CloseButton (Button)
-        └── SubViewportContainer
+	└── VBoxContainer
+		├── TitleBar (PanelContainer)
+		│   └── HBoxContainer
+		│       ├── IDLabel (Label)
+		│       ├── FloatButton (Button)
+		│       └── CloseButton (Button)
+		└── SubViewportContainer
 ```
 
 **Node Paths Expected by Script:**
@@ -108,11 +108,11 @@ Should create a viewport with:
 
 ```
 ViewportManager.create_viewport("main", "3d", {...})
-    ↓
+	↓
 Loads viewport_holder.tscn
-    ↓
+	↓
 Scene instantiated with all UI nodes
-    ↓
+	↓
 viewport_holder.gd's @onready vars get references
     ↓
 setup() loads 3d_viewport.tscn into SubViewportContainer

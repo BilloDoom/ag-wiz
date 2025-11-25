@@ -70,6 +70,7 @@ layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Panel/MarginContainer/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer"]
 layout_mode = 2
+alignment = 2
 
 [node name="RunBtn" type="Button" parent="Panel/MarginContainer/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -86,25 +87,12 @@ text = "Add window"
 [node name="CodeEdit" type="CodeEdit" parent="Panel/MarginContainer/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-text = "for i in range(2):
-	print(i)
+text = "from godot import configure_viewport
 
-x = 1
-y = 2
-z = 6
-print((x+y)*z)
-
-print(\"hello world\")
-
-i = 0
-while True:
-	if i > 10:
-		break
-	print(i)
-	i += 1
-print(\"exit\")
-
-"
+configure_viewport(\"viewport_1\", \"3d\", {
+	\"camera_position\": (10, 10, 10),
+	\"orbit_controls\": True
+})"
 placeholder_text = "code"
 syntax_highlighter = SubResource("CodeHighlighter_1ylis")
 highlight_current_line = true

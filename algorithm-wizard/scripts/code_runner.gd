@@ -31,6 +31,11 @@ func _on_run_pressed():
 	debug_panel.clear_output()
 	debug_panel.log_message("Running script...")
 
+	# Clean up previous scenes/cameras before running new script
+	var viewport_manager = get_node("/root/ViewportManager")
+	if viewport_manager:
+		viewport_manager.cleanup_all_scenes()
+
 	# Execute the script
 	var success = script_runtime.execute_script(code)
 

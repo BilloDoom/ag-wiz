@@ -107,25 +107,23 @@ layout_mode = 2
 [node name="CodeEdit" type="CodeEdit" parent="Panel/VSplitContainer/HSplitContainer/PanelContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-text = "for i in range(2):
-	print(i)
+text = "from godot import create_scene_3d, add_camera, draw_box, draw_sphere, draw_cylinder, draw_torus
 
-x = 1
-y = 2
-z = 6
-print((x+y)*z)
+scene = create_scene_3d()
 
-print(\"hello world\")
+add_camera(\"cam1\", \"viewport_1\", scene, {
+    \"position\": (10, 10, 10),
+    \"orbit_controls\": True
+})
 
-i = 0
-while True:
-	if i > 10:
-		break
-	print(i)
-	i += 1
-print(\"exit\")
+with scene:
+    draw_box((2, 2, 2), position=(0, 0, 0), color=(1, 0, 0, 1))
 
-"
+    draw_sphere(1.5, position=(5, 0, 0), color=(0, 0, 1, 1))
+
+    draw_cylinder(0.5, 3, position=(-5, 0, 0), color=(0, 1, 0, 1))
+
+    draw_torus(0.5, 1.5, position=(0, 0, 5), color=(1, 1, 0, 1))"
 placeholder_text = "code"
 minimap_draw = true
 syntax_highlighter = SubResource("CodeHighlighter_lp381")

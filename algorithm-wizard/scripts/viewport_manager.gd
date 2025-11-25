@@ -10,6 +10,16 @@ const ViewportHolderScene = preload("res://viewports/viewport_holder.tscn")
 var holders: Dictionary = {}  # id -> ViewportHolder
 var floating_windows: Dictionary = {}  # id -> Window
 
+# Scene tracking (shared World3D/World2D instances)
+var scenes: Dictionary = {}  # scene_id -> {type: "3d"/"2d", world: World3D/World2D, root: Node3D/Node2D}
+var scene_counter: int = 0
+
+# Camera tracking
+var cameras: Dictionary = {}  # camera_name -> {port_id, scene_id, subviewport, camera_node}
+
+# Scene context for Python "with" statement
+var current_scene_context: String = ""
+
 # Embedded grid container
 var embedded_grid: GridContainer = null
 var embedded_container: Control = null
@@ -217,6 +227,277 @@ func clear_viewport(id: String):
 func get_all_viewport_ids() -> Array:
 	"""Get list of all viewport IDs"""
 	return holders.keys()
+
+func cleanup_all_scenes() -> void:
+	"""Clean up all scenes, cameras, and reset counters - called before each script execution"""
+	print("ViewportManager: Cleaning up all scenes and cameras")
+
+	# Remove all cameras from holders
+	for camera_name in cameras.keys():
+		var camera_data = cameras[camera_name]
+		var holder = holders.get(camera_data["port_id"])
+		if holder:
+			holder.remove_camera_subviewport(camera_name)
+
+	# Clear camera tracking
+	cameras.clear()
+
+	# Clean up all scene roots
+	for scene_id in scenes.keys():
+		var scene_data = scenes[scene_id]
+		if scene_data.has("root") and scene_data["root"]:
+			var root = scene_data["root"]
+			# Remove all children from root
+			for child in root.get_children():
+				child.queue_free()
+			# Queue free the root itself if it has a parent
+			if root.get_parent():
+				root.get_parent().remove_child(root)
+			root.queue_free()
+
+	# Clear scene tracking
+	scenes.clear()
+
+	# Reset counters
+	scene_counter = 0
+
+	# Clear scene context
+	current_scene_context = ""
+
+	print("ViewportManager: Cleanup complete")
+
+func create_scene_3d() -> String:
+	"""Create a new 3D scene (World3D) that can be shared across viewports"""
+	scene_counter += 1
+	var scene_id = "scene_3d_" + str(scene_counter)
+
+	var world = World3D.new()
+
+	# Create a root node for this scene where objects will be added
+	var root = Node3D.new()
+	root.name = "SceneRoot_" + scene_id
+
+	scenes[scene_id] = {
+		"type": "3d",
+		"world": world,
+		"root": root
+	}
+
+	print("ViewportManager: Created 3D scene '%s'" % scene_id)
+	return scene_id
+
+func create_scene_2d() -> String:
+	"""Create a new 2D scene (World2D) that can be shared across viewports"""
+	scene_counter += 1
+	var scene_id = "scene_2d_" + str(scene_counter)
+
+	var world = World2D.new()
+
+	# Create a root node for this scene where objects will be added
+	var root = Node2D.new()
+	root.name = "SceneRoot_" + scene_id
+
+	scenes[scene_id] = {
+		"type": "2d",
+		"world": world,
+		"root": root
+	}
+
+	print("ViewportManager: Created 2D scene '%s'" % scene_id)
+	return scene_id
+
+func add_camera_to_viewport(camera_name: String, port_id: String, scene_id: String, settings: Dictionary = {}) -> bool:
+	"""Add a camera to a viewport, viewing the specified scene"""
+
+	# Check if camera name already exists
+	if cameras.has(camera_name):
+		push_error("ViewportManager: Camera '%s' already exists" % camera_name)
+		return false
+
+	# Check if viewport exists
+	if not holders.has(port_id):
+		push_error("ViewportManager: Viewport '%s' not found" % port_id)
+		return false
+
+	# Check if scene exists
+	if not scenes.has(scene_id):
+		push_error("ViewportManager: Scene '%s' not found" % scene_id)
+		return false
+
+	var holder = holders[port_id]
+	var scene_data = scenes[scene_id]
+
+	# Pass scene_id in settings so holder can get the scene root
+	var holder_settings = settings.duplicate()
+	holder_settings["scene_id"] = scene_id
+
+	# Create SubViewport + Camera in the holder
+	var result = holder.add_camera_subviewport(camera_name, scene_data["world"], scene_data["type"], holder_settings)
+
+	if result:
+		# Track camera
+		cameras[camera_name] = {
+			"port_id": port_id,
+			"scene_id": scene_id,
+			"subviewport": result["subviewport"],
+			"camera_node": result["camera"]
+		}
+
+		print("ViewportManager: Added camera '%s' to viewport '%s' viewing scene '%s'" % [camera_name, port_id, scene_id])
+		return true
+	else:
+		push_error("ViewportManager: Failed to add camera '%s' to viewport '%s'" % [camera_name, port_id])
+		return false
+
+func remove_camera(camera_name: String) -> bool:
+	"""Remove a camera from its viewport"""
+	if not cameras.has(camera_name):
+		push_error("ViewportManager: Camera '%s' not found" % camera_name)
+		return false
+
+	var camera_data = cameras[camera_name]
+	var holder = holders.get(camera_data["port_id"])
+
+	if holder:
+		holder.remove_camera_subviewport(camera_name)
+
+	cameras.erase(camera_name)
+	print("ViewportManager: Removed camera '%s'" % camera_name)
+	return true
+
+func get_camera_node(camera_name: String) -> Node:
+	"""Get the Camera node by name"""
+	if cameras.has(camera_name):
+		return cameras[camera_name]["camera_node"]
+	return null
+
+# Scene context management (for Python "with" statement)
+
+func enter_scene_context(scene_id: String) -> bool:
+	"""Enter a scene context for drawing operations"""
+	if not scenes.has(scene_id):
+		push_error("ViewportManager: Scene '%s' not found" % scene_id)
+		return false
+
+	current_scene_context = scene_id
+	return true
+
+func exit_scene_context():
+	"""Exit the current scene context"""
+	current_scene_context = ""
+
+func get_scene_root(scene_id: String) -> Node:
+	"""Get the root node of a scene where objects should be added"""
+	if scenes.has(scene_id):
+		return scenes[scene_id]["root"]
+	return null
+
+func get_current_scene_root() -> Node:
+	"""Get the root node of the current context scene"""
+	if current_scene_context != "":
+		return get_scene_root(current_scene_context)
+	return null
+
+# Primitive drawing functions
+
+func draw_box(size: Vector3, position: Vector3 = Vector3.ZERO, rotation: Vector3 = Vector3.ZERO, color: Color = Color.WHITE) -> Node3D:
+	"""Draw a box primitive in the current scene context"""
+	var root = get_current_scene_root()
+	if not root:
+		push_error("ViewportManager: No scene context active. Use 'with scene:' in Python")
+		return null
+
+	var mesh_instance = MeshInstance3D.new()
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = size
+
+	mesh_instance.mesh = box_mesh
+	mesh_instance.position = position
+	mesh_instance.rotation = rotation
+
+	# Create material with color
+	var material = StandardMaterial3D.new()
+	material.albedo_color = color
+	mesh_instance.set_surface_override_material(0, material)
+
+	root.add_child(mesh_instance)
+	print("ViewportManager: Added box to scene '%s'" % current_scene_context)
+	return mesh_instance
+
+func draw_sphere(radius: float, position: Vector3 = Vector3.ZERO, color: Color = Color.WHITE) -> Node3D:
+	"""Draw a sphere primitive in the current scene context"""
+	var root = get_current_scene_root()
+	if not root:
+		push_error("ViewportManager: No scene context active. Use 'with scene:' in Python")
+		return null
+
+	var mesh_instance = MeshInstance3D.new()
+	var sphere_mesh = SphereMesh.new()
+	sphere_mesh.radius = radius
+	sphere_mesh.height = radius * 2.0
+
+	mesh_instance.mesh = sphere_mesh
+	mesh_instance.position = position
+
+	# Create material with color
+	var material = StandardMaterial3D.new()
+	material.albedo_color = color
+	mesh_instance.set_surface_override_material(0, material)
+
+	root.add_child(mesh_instance)
+	print("ViewportManager: Added sphere to scene '%s'" % current_scene_context)
+	return mesh_instance
+
+func draw_cylinder(radius: float, height: float, position: Vector3 = Vector3.ZERO, rotation: Vector3 = Vector3.ZERO, color: Color = Color.WHITE) -> Node3D:
+	"""Draw a cylinder primitive in the current scene context"""
+	var root = get_current_scene_root()
+	if not root:
+		push_error("ViewportManager: No scene context active. Use 'with scene:' in Python")
+		return null
+
+	var mesh_instance = MeshInstance3D.new()
+	var cylinder_mesh = CylinderMesh.new()
+	cylinder_mesh.top_radius = radius
+	cylinder_mesh.bottom_radius = radius
+	cylinder_mesh.height = height
+
+	mesh_instance.mesh = cylinder_mesh
+	mesh_instance.position = position
+	mesh_instance.rotation = rotation
+
+	# Create material with color
+	var material = StandardMaterial3D.new()
+	material.albedo_color = color
+	mesh_instance.set_surface_override_material(0, material)
+
+	root.add_child(mesh_instance)
+	print("ViewportManager: Added cylinder to scene '%s'" % current_scene_context)
+	return mesh_instance
+
+func draw_torus(inner_radius: float, outer_radius: float, position: Vector3 = Vector3.ZERO, rotation: Vector3 = Vector3.ZERO, color: Color = Color.WHITE) -> Node3D:
+	"""Draw a torus primitive in the current scene context"""
+	var root = get_current_scene_root()
+	if not root:
+		push_error("ViewportManager: No scene context active. Use 'with scene:' in Python")
+		return null
+
+	var mesh_instance = MeshInstance3D.new()
+	var torus_mesh = TorusMesh.new()
+	torus_mesh.inner_radius = inner_radius
+	torus_mesh.outer_radius = outer_radius
+
+	mesh_instance.mesh = torus_mesh
+	mesh_instance.position = position
+	mesh_instance.rotation = rotation
+
+	# Create material with color
+	var material = StandardMaterial3D.new()
+	material.albedo_color = color
+	mesh_instance.set_surface_override_material(0, material)
+
+	root.add_child(mesh_instance)
+	print("ViewportManager: Added torus to scene '%s'" % current_scene_context)
+	return mesh_instance
 
 # Internal methods
 
