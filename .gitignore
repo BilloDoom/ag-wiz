@@ -2,3 +2,4 @@ build/
 .claude/
 .vscode/
 algorithm-wizard/bin/Debug/
+_info/
