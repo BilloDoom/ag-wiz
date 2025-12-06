@@ -1,0 +1,109 @@
+[gd_scene load_steps=9 format=3 uid="uid://d2ou0vg2d1eyo"]
+
+[ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="1_3dk36"]
+[ext_resource type="ButtonGroup" uid="uid://c2jg2bcvvxtgl" path="res://window_selector_button_group.tres" id="2_6p3j2"]
+[ext_resource type="Script" uid="uid://vfsbjlfbh4tc" path="res://scenes/tile.gd" id="2_jy7pm"]
+[ext_resource type="PackedScene" uid="uid://bvwjbyd7480m4" path="res://viewports/viewport_holder.tscn" id="3_6p3j2"]
+[ext_resource type="PackedScene" uid="uid://mw5xpnvnx5q5" path="res://scenes/code_editor.tscn" id="4_gtpg2"]
+[ext_resource type="PackedScene" uid="uid://dckfbua8on22i" path="res://scenes/logger.tscn" id="5_gtpg2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jy7pm"]
+bg_color = Color(0.09411765, 0.09411765, 0.09411765, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.19076231, 0.19076234, 0.19076225, 1)
+border_blend = true
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ywnoi"]
+bg_color = Color(0.14285833, 0.14285818, 0.14285827, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_color = Color(0.19215687, 0.19215687, 0.19215687, 1)
+border_blend = true
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="Tile" type="MarginContainer" node_paths=PackedStringArray("button_1", "button_2", "button_3", "content_container")]
+custom_minimum_size = Vector2(20, 20)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource("1_3dk36")
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 2
+theme_override_constants/margin_bottom = 2
+script = ExtResource("2_jy7pm")
+button_1 = NodePath("VBoxContainer/Panel/MarginContainer/HBoxContainer/ButtonViewport")
+button_1_scene = ExtResource("3_6p3j2")
+button_2 = NodePath("VBoxContainer/Panel/MarginContainer/HBoxContainer/ButtonEditor")
+button_2_scene = ExtResource("4_gtpg2")
+button_3 = NodePath("VBoxContainer/Panel/MarginContainer/HBoxContainer/ButtonLogger")
+button_3_scene = ExtResource("5_gtpg2")
+content_container = NodePath("VBoxContainer/ContentContainer")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_jy7pm")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ywnoi")
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 25.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ButtonViewport" type="Button" parent="VBoxContainer/Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+toggle_mode = true
+button_group = ExtResource("2_6p3j2")
+text = "Viewport
+"
+
+[node name="ButtonEditor" type="Button" parent="VBoxContainer/Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+toggle_mode = true
+button_group = ExtResource("2_6p3j2")
+text = "Editor"
+
+[node name="ButtonLogger" type="Button" parent="VBoxContainer/Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+toggle_mode = true
+button_group = ExtResource("2_6p3j2")
+text = "Logger"
+
+[node name="ContentContainer" type="Control" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3

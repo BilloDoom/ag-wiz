@@ -1,6 +1,4 @@
-# Algorithm Wizard - Build Instructions
-
-## Prerequisites
+# Algorithm Wizard
 
 ### Required Software
 - **CMake** (3.20 or higher)
@@ -15,7 +13,6 @@ pip install pybind11
 
 ```bash
 git clone "https://github.com/BilloDoom/ag-wiz.git"
-
 git submodule update --init --recursive
 ```
 
