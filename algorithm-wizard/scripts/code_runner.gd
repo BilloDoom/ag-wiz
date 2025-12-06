@@ -1,9 +1,10 @@
 extends Node
+class_name CodeRunner
 
 @export var run_btn: Button
 @export var compile_btn: Button
 @export var code_edit: CodeEdit
-@export var debug_panel: Node
+@export var debug_panel: CodeLogger
 
 var script_runtime: ScriptRuntime
 var viewport_bridge: ViewportBridge

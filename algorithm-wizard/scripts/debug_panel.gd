@@ -1,4 +1,5 @@
 extends Node
+class_name CodeLogger
 
 @export var rich_text_output: RichTextLabel
 

@@ -1,6 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://mw5xpnvnx5q5"]
+[gd_scene load_steps=5 format=3 uid="uid://mw5xpnvnx5q5"]
 
 [ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="1_q0psu"]
+[ext_resource type="Script" uid="uid://bneqx57s2f3c5" path="res://scripts/debug_panel.gd" id="2_xqpb2"]
+[ext_resource type="Script" uid="uid://cqqbtntb7ce5v" path="res://scripts/code_runner.gd" id="3_cctyv"]
 
 [sub_resource type="CodeHighlighter" id="CodeHighlighter_i4sis"]
 number_color = Color(0.50980395, 0.8, 0.70980394, 1)
@@ -23,6 +25,25 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_q0psu")
 
+[node name="DebugPanel" type="Node" parent="." node_paths=PackedStringArray("rich_text_output")]
+script = ExtResource("2_xqpb2")
+rich_text_output = NodePath("../VBoxContainer/MarginContainer/RichTextOutput")
+
+[node name="CodeRunner" type="Node" parent="." node_paths=PackedStringArray("run_btn", "compile_btn", "code_edit", "debug_panel")]
+script = ExtResource("3_cctyv")
+run_btn = NodePath("../VBoxContainer/HBoxContainer/RunBtn")
+compile_btn = NodePath("../VBoxContainer/HBoxContainer/CompileBtn")
+code_edit = NodePath("../VBoxContainer/CodeEdit")
+debug_panel = NodePath("../DebugPanel")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -33,7 +54,6 @@ grow_vertical = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
-alignment = 2
 
 [node name="RunBtn" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -42,10 +62,6 @@ text = "Run"
 [node name="CompileBtn" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "Compile"
-
-[node name="AddViewportBtn" type="Button" parent="VBoxContainer/HBoxContainer"]
-layout_mode = 2
-text = "Add window"
 
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
@@ -83,3 +99,11 @@ gutters_zero_pad_line_numbers = true
 gutters_draw_fold_gutter = true
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="RichTextOutput" type="RichTextLabel" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+text = "output"

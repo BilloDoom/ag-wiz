@@ -19,6 +19,7 @@ config/icon="uid://baworexhgpvrv"
 [autoload]
 
 ViewportManager="*res://scripts/viewport_manager.gd"
+ScriptManager="*res://scripts/script_manager.gd"
 
 [global_group]
 
