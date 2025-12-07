@@ -34,8 +34,12 @@ cmake --build . --config Release
 
 ## Rebuilding After Changes
 
+For relese or debug
 ```bash
 cmake --build . --config Release
+```
+```bash
+cmake --build . --config Debug
 ```
 
 ### Full Rebuild

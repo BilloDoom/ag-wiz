@@ -1,9 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://bvwjbyd7480m4"]
+[gd_scene load_steps=4 format=3 uid="uid://bvwjbyd7480m4"]
 
 [ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="1_51yfd"]
 [ext_resource type="Script" uid="uid://b126t5eqqlesx" path="res://scripts/viewport_holder.gd" id="1_phj6k"]
+[ext_resource type="Texture2D" uid="uid://tjeftiurlm2q" path="res://assets/icons/no_camera.svg" id="3_65eqa"]
 
-[node name="ViewportHolder" type="Control"]
+[node name="ViewportHolder" type="Control" node_paths=PackedStringArray("viewport_container", "id_label")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,37 +13,48 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_51yfd")
 script = ExtResource("1_phj6k")
+viewport_container = NodePath("SubViewportContainer")
+id_label = NodePath("MarginContainer/Panel/IDLabel")
 
-[node name="PanelContainer" type="PanelContainer" parent="."]
+[node name="TextureRect" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+texture = ExtResource("3_65eqa")
+stretch_mode = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
-layout_mode = 2
-
-[node name="TitleBar" type="PanelContainer" parent="PanelContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer/TitleBar"]
-layout_mode = 2
-
-[node name="FloatBtn" type="Button" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
-layout_mode = 2
-text = "Float"
-
-[node name="CloseBtn" type="Button" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
-layout_mode = 2
-text = "Close"
-
-[node name="IDLabel" type="Label" parent="PanelContainer/VBoxContainer/TitleBar/HBoxContainer"]
-layout_mode = 2
-text = "ID"
-
-[node name="SubViewportContainer" type="SubViewportContainer" parent="PanelContainer/VBoxContainer"]
-layout_mode = 2
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_vertical = 3
 stretch = true
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+offset_right = 165.0
+offset_bottom = 43.0
+
+[node name="Panel" type="Panel" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="IDLabel" type="Label" parent="MarginContainer/Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -6.5
+offset_top = -8.5
+offset_right = 6.5
+offset_bottom = 8.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "ID"

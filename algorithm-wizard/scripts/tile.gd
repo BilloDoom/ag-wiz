@@ -2,6 +2,7 @@ extends MarginContainer
 class_name Tile
 
 signal window_type_changed(tile: Tile, window_type: String)
+signal viewport_requested(tile: Tile)
 
 # Button 1
 @export var button_1: BaseButton
@@ -39,7 +40,10 @@ func _ready() -> void:
 		set_window_type(initial_type)
 
 func _on_button_1_pressed() -> void:
-	"""Handle button 1 press"""
+	"""Handle button 1 press (Viewport)"""
+	# Emit signal for viewport creation
+	viewport_requested.emit(self)
+
 	if button_1_scene:
 		load_window(button_1.name, button_1_scene)
 	else:

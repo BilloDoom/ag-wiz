@@ -36,7 +36,6 @@ func setup(cam: Camera3D, container: SubViewportContainer):
 
 		# Try to find target from camera's look direction
 		if camera.global_transform.basis.z != Vector3.ZERO:
-			var forward = -camera.global_transform.basis.z.normalized()
 			# Estimate distance
 			distance = cam_pos.length()
 

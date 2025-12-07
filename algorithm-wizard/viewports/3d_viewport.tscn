@@ -1,12 +1,12 @@
 [gd_scene load_steps=4 format=3 uid="uid://c7edo7108vlb0"]
 
-[ext_resource type="Script" uid="uid://bra2uqn87ggj4" path="res://scripts/camera_3d_setup.gd" id="1_e25gh"]
+[ext_resource type="Script" uid="uid://bra2uqn87ggj4" path="res://scripts/camera_api/camera_3d_setup.gd" id="1_e25gh"]
 
 [sub_resource type="Environment" id="Environment_7vjro"]
 background_mode = 1
 background_color = Color(0.1925509, 0.2221362, 0.26441088, 1)
 
-[sub_resource type="BoxMesh" id="BoxMesh_e25gh"]
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_7vjro"]
 
 [node name="3DViewport" type="SubViewport"]
 size = Vector2i(642, 442)
@@ -25,4 +25,4 @@ shadow_enabled = true
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(0.6600541, -0.7512181, 0, -0.32408217, -0.2847532, -0.9021565, 0.67771626, 0.59547204, -0.4314089, 0, 0, 0)
-mesh = SubResource("BoxMesh_e25gh")
+mesh = SubResource("ImmediateMesh_7vjro")

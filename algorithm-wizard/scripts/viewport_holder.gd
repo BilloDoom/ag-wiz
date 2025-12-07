@@ -3,38 +3,24 @@ class_name ViewportHolder extends Control
 ## ViewportHolder - Reusable wrapper for viewport instances
 ## This script should be attached to the viewport_holder.tscn root node
 
-# Signals
-signal close_requested(holder_id: String)
-signal float_requested(holder_id: String)
-
 # Properties
 var holder_id: String = ""
-var is_floating: bool = false
 
 # Camera tracking (multiple SubViewports, each with a camera)
 var camera_subviewports: Dictionary = {}  # camera_name -> {subviewport: SubViewport, camera: Camera3D/Camera2D, controller: Node}
 
 # UI Elements (from scene)
-@onready var viewport_container: SubViewportContainer = $PanelContainer/VBoxContainer/SubViewportContainer
-@onready var id_label: Label = $PanelContainer/VBoxContainer/TitleBar/HBoxContainer/IDLabel
-@onready var float_button: Button = $PanelContainer/VBoxContainer/TitleBar/HBoxContainer/FloatBtn
-@onready var close_button: Button = $PanelContainer/VBoxContainer/TitleBar/HBoxContainer/CloseBtn
+@export var viewport_container: SubViewportContainer
+@export var id_label: Label
 
-const CAMERA_CONTROLLER_3D = preload("res://scripts/camera_controller_3d.gd")
-const CAMERA_CONTROLLER_2D = preload("res://scripts/camera_controller_2d.gd")
+const CAMERA_CONTROLLER_3D = preload("res://scripts/camera_api/camera_controller_3d.gd")
+const CAMERA_CONTROLLER_2D = preload("res://scripts/camera_api/camera_controller_2d.gd")
 
 func _ready():
-	custom_minimum_size = Vector2(400, 300)
-
-	# Disable stretch to allow manual viewport sizing
+	# Enable stretch to allow automatic viewport scaling
 	if viewport_container:
-		viewport_container.stretch = false
-
-	# Connect button signals
-	if float_button:
-		float_button.pressed.connect(_on_float_pressed)
-	if close_button:
-		close_button.pressed.connect(_on_close_pressed)
+		viewport_container.stretch = true
+		viewport_container.stretch_shrink = 1  # Allow shrinking
 
 func set_holder_id(id: String):
 	"""Set the holder ID and update label"""
@@ -55,7 +41,6 @@ func add_camera_subviewport(camera_name: String, world, scene_type: String, sett
 	# Create SubViewport
 	var subviewport = SubViewport.new()
 	subviewport.name = "SubViewport_" + camera_name
-	subviewport.size = Vector2i(viewport_container.size)
 	subviewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
 	# Get the scene root from ViewportManager and add it to this subviewport FIRST
@@ -174,18 +159,3 @@ func get_camera_node(camera_name: String) -> Node:
 	if camera_subviewports.has(camera_name):
 		return camera_subviewports[camera_name]["camera"]
 	return null
-
-func _process(_delta):
-	# Update all subviewport sizes to match container
-	if viewport_container:
-		var container_size = Vector2i(viewport_container.size)
-		for camera_name in camera_subviewports:
-			var subviewport = camera_subviewports[camera_name]["subviewport"]
-			if subviewport and subviewport.size != container_size:
-				subviewport.size = container_size
-
-func _on_float_pressed():
-	float_requested.emit(holder_id)
-
-func _on_close_pressed():
-	close_requested.emit(holder_id)
