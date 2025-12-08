@@ -27,13 +27,13 @@ theme = ExtResource("1_q0psu")
 
 [node name="DebugPanel" type="Node" parent="." node_paths=PackedStringArray("rich_text_output")]
 script = ExtResource("2_xqpb2")
-rich_text_output = NodePath("../VBoxContainer/MarginContainer/RichTextOutput")
+rich_text_output = NodePath("../VBoxContainer/VSplitContainer/MarginContainer/RichTextOutput")
 
 [node name="CodeRunner" type="Node" parent="." node_paths=PackedStringArray("run_btn", "compile_btn", "code_edit", "debug_panel")]
 script = ExtResource("3_cctyv")
 run_btn = NodePath("../VBoxContainer/HBoxContainer/RunBtn")
 compile_btn = NodePath("../VBoxContainer/HBoxContainer/CompileBtn")
-code_edit = NodePath("../VBoxContainer/CodeEdit")
+code_edit = NodePath("../VBoxContainer/VSplitContainer/CodeEdit")
 debug_panel = NodePath("../DebugPanel")
 
 [node name="Panel" type="Panel" parent="."]
@@ -66,7 +66,11 @@ text = "Compile"
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="CodeEdit" type="CodeEdit" parent="VBoxContainer"]
+[node name="VSplitContainer" type="VSplitContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CodeEdit" type="CodeEdit" parent="VBoxContainer/VSplitContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 text = "from godot import create_scene_3d, add_camera, draw_box, draw_sphere, draw_cylinder, draw_torus
@@ -100,10 +104,10 @@ gutters_draw_fold_gutter = true
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
 
-[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/VSplitContainer"]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
-[node name="RichTextOutput" type="RichTextLabel" parent="VBoxContainer/MarginContainer"]
+[node name="RichTextOutput" type="RichTextLabel" parent="VBoxContainer/VSplitContainer/MarginContainer"]
 layout_mode = 2
 text = "output"

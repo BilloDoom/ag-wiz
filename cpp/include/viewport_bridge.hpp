@@ -39,11 +39,24 @@ public:
     bool enter_scene_context(const String& scene_id);
     void exit_scene_context();
 
-    // Primitive drawing
+    // 3D Primitive drawing
     Node* draw_box(const Vector3& size, const Vector3& position, const Vector3& rotation, const Color& color);
     Node* draw_sphere(float radius, const Vector3& position, const Color& color);
     Node* draw_cylinder(float radius, float height, const Vector3& position, const Vector3& rotation, const Color& color);
     Node* draw_torus(float inner_radius, float outer_radius, const Vector3& position, const Vector3& rotation, const Color& color);
+
+    // 3D Mesh building
+    Dictionary create_mesh_builder_3d(const Vector3& position, const Vector3& rotation);
+    Node* build_mesh_3d(const Array& vertices, const Array& indices, const Array& normals, const Array& colors, const Array& uvs, const Vector3& position, const Vector3& rotation, const Color& color);
+
+    // 2D Primitive drawing
+    Node* draw_rect_2d(const Vector2& size, const Vector2& position, float rotation, const Color& color, bool filled);
+    Node* draw_circle_2d(float radius, const Vector2& position, const Color& color, bool filled, int segments);
+    Node* draw_line_2d(const Vector2& from_pos, const Vector2& to_pos, const Color& color, float width);
+    Node* draw_polygon_2d(const Array& points, const Vector2& position, float rotation, const Color& color, bool filled);
+
+    // 2D Mesh building
+    Node* build_mesh_2d(const Array& vertices, const Array& colors, const Array& uvs, const Vector2& position, float rotation, const Color& color);
 
     // Viewport management (legacy - kept for compatibility)
     bool init_3d_scene(const String& id, const Dictionary& settings);

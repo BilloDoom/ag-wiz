@@ -211,6 +211,110 @@ Node* ViewportBridge::draw_torus(float inner_radius, float outer_radius, const V
     return nullptr;
 }
 
+// 3D Mesh building implementations
+
+Dictionary ViewportBridge::create_mesh_builder_3d(const Vector3& position, const Vector3& rotation) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return Dictionary();
+    }
+
+    if (manager->has_method("create_mesh_builder_3d")) {
+        Variant result = manager->call("create_mesh_builder_3d", position, rotation);
+        return result.operator Dictionary();
+    }
+
+    return Dictionary();
+}
+
+Node* ViewportBridge::build_mesh_3d(const Array& vertices, const Array& indices, const Array& normals, const Array& colors, const Array& uvs, const Vector3& position, const Vector3& rotation, const Color& color) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return nullptr;
+    }
+
+    if (manager->has_method("build_mesh_3d")) {
+        Variant result = manager->call("build_mesh_3d", vertices, indices, normals, colors, uvs, position, rotation, color);
+        return Object::cast_to<Node>(result.operator Object*());
+    }
+
+    return nullptr;
+}
+
+// 2D Primitive drawing implementations
+
+Node* ViewportBridge::draw_rect_2d(const Vector2& size, const Vector2& position, float rotation, const Color& color, bool filled) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return nullptr;
+    }
+
+    if (manager->has_method("draw_rect_2d")) {
+        Variant result = manager->call("draw_rect_2d", size, position, rotation, color, filled);
+        return Object::cast_to<Node>(result.operator Object*());
+    }
+
+    return nullptr;
+}
+
+Node* ViewportBridge::draw_circle_2d(float radius, const Vector2& position, const Color& color, bool filled, int segments) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return nullptr;
+    }
+
+    if (manager->has_method("draw_circle_2d")) {
+        Variant result = manager->call("draw_circle_2d", radius, position, color, filled, segments);
+        return Object::cast_to<Node>(result.operator Object*());
+    }
+
+    return nullptr;
+}
+
+Node* ViewportBridge::draw_line_2d(const Vector2& from_pos, const Vector2& to_pos, const Color& color, float width) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return nullptr;
+    }
+
+    if (manager->has_method("draw_line_2d")) {
+        Variant result = manager->call("draw_line_2d", from_pos, to_pos, color, width);
+        return Object::cast_to<Node>(result.operator Object*());
+    }
+
+    return nullptr;
+}
+
+Node* ViewportBridge::draw_polygon_2d(const Array& points, const Vector2& position, float rotation, const Color& color, bool filled) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return nullptr;
+    }
+
+    if (manager->has_method("draw_polygon_2d")) {
+        Variant result = manager->call("draw_polygon_2d", points, position, rotation, color, filled);
+        return Object::cast_to<Node>(result.operator Object*());
+    }
+
+    return nullptr;
+}
+
+// 2D Mesh building implementation
+
+Node* ViewportBridge::build_mesh_2d(const Array& vertices, const Array& colors, const Array& uvs, const Vector2& position, float rotation, const Color& color) {
+    Node* manager = get_viewport_manager();
+    if (!manager) {
+        return nullptr;
+    }
+
+    if (manager->has_method("build_mesh_2d")) {
+        Variant result = manager->call("build_mesh_2d", vertices, colors, uvs, position, rotation, color);
+        return Object::cast_to<Node>(result.operator Object*());
+    }
+
+    return nullptr;
+}
+
 // Legacy API implementations
 bool ViewportBridge::init_3d_scene(const String& id, const Dictionary& settings) {
     Node* manager = get_viewport_manager();
@@ -531,6 +635,168 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("outer_radius"),
            py::arg("position") = py::make_tuple(0, 0, 0),
            py::arg("rotation") = py::make_tuple(0, 0, 0),
+           py::arg("color") = py::make_tuple(1, 1, 1, 1));
+
+        // 3D Mesh building functions
+        godot_module.def("create_mesh_builder_3d", [bridge](py::tuple position, py::tuple rotation) {
+            Vector3 pos_vec(
+                position[0].cast<double>(),
+                position[1].cast<double>(),
+                position[2].cast<double>()
+            );
+            Vector3 rot_vec(
+                rotation[0].cast<double>(),
+                rotation[1].cast<double>(),
+                rotation[2].cast<double>()
+            );
+
+            Dictionary builder_dict = bridge->create_mesh_builder_3d(pos_vec, rot_vec);
+
+            // Convert Dictionary to Python dict
+            py::dict result;
+            Array keys = builder_dict.keys();
+            for (int i = 0; i < keys.size(); i++) {
+                String key = keys[i];
+                Variant value = builder_dict[key];
+                // Store the Callable references - Python will need to call them via helper
+                result[py::str(key.utf8().get_data())] = py::cast(value);
+            }
+
+            return result;
+        }, "Create a 3D mesh builder using ImmediateMesh",
+           py::arg("position") = py::make_tuple(0, 0, 0),
+           py::arg("rotation") = py::make_tuple(0, 0, 0));
+
+        godot_module.def("build_mesh_3d", [bridge](py::list vertices, py::list indices, py::list normals, py::list colors, py::list uvs, py::tuple position, py::tuple rotation, py::tuple color) {
+            Array vert_array;
+            for (auto item : vertices) {
+                py::tuple v = item.cast<py::tuple>();
+                vert_array.push_back(Vector3(v[0].cast<double>(), v[1].cast<double>(), v[2].cast<double>()));
+            }
+
+            Array idx_array;
+            for (auto item : indices) {
+                idx_array.push_back(item.cast<int>());
+            }
+
+            Array norm_array;
+            for (auto item : normals) {
+                py::tuple n = item.cast<py::tuple>();
+                norm_array.push_back(Vector3(n[0].cast<double>(), n[1].cast<double>(), n[2].cast<double>()));
+            }
+
+            Array col_array;
+            for (auto item : colors) {
+                py::tuple c = item.cast<py::tuple>();
+                col_array.push_back(Color(c[0].cast<float>(), c[1].cast<float>(), c[2].cast<float>(), c.size() > 3 ? c[3].cast<float>() : 1.0f));
+            }
+
+            Array uv_array;
+            for (auto item : uvs) {
+                py::tuple u = item.cast<py::tuple>();
+                uv_array.push_back(Vector2(u[0].cast<double>(), u[1].cast<double>()));
+            }
+
+            Vector3 pos_vec(position[0].cast<double>(), position[1].cast<double>(), position[2].cast<double>());
+            Vector3 rot_vec(rotation[0].cast<double>(), rotation[1].cast<double>(), rotation[2].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            bridge->build_mesh_3d(vert_array, idx_array, norm_array, col_array, uv_array, pos_vec, rot_vec, col);
+        }, "Build a custom 3D mesh from vertices",
+           py::arg("vertices"),
+           py::arg("indices") = py::list(),
+           py::arg("normals") = py::list(),
+           py::arg("colors") = py::list(),
+           py::arg("uvs") = py::list(),
+           py::arg("position") = py::make_tuple(0, 0, 0),
+           py::arg("rotation") = py::make_tuple(0, 0, 0),
+           py::arg("color") = py::make_tuple(1, 1, 1, 1));
+
+        // 2D Drawing functions
+        godot_module.def("draw_rect_2d", [bridge](py::tuple size, py::tuple position, double rotation, py::tuple color, bool filled) {
+            Vector2 size_vec(size[0].cast<double>(), size[1].cast<double>());
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            bridge->draw_rect_2d(size_vec, pos_vec, rotation, col, filled);
+        }, "Draw a rectangle in 2D",
+           py::arg("size"),
+           py::arg("position") = py::make_tuple(0, 0),
+           py::arg("rotation") = 0.0,
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("filled") = true);
+
+        godot_module.def("draw_circle_2d", [bridge](double radius, py::tuple position, py::tuple color, bool filled, int segments) {
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            bridge->draw_circle_2d(radius, pos_vec, col, filled, segments);
+        }, "Draw a circle in 2D",
+           py::arg("radius"),
+           py::arg("position") = py::make_tuple(0, 0),
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("filled") = true,
+           py::arg("segments") = 32);
+
+        godot_module.def("draw_line_2d", [bridge](py::tuple from_pos, py::tuple to_pos, py::tuple color, double width) {
+            Vector2 from_vec(from_pos[0].cast<double>(), from_pos[1].cast<double>());
+            Vector2 to_vec(to_pos[0].cast<double>(), to_pos[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            bridge->draw_line_2d(from_vec, to_vec, col, width);
+        }, "Draw a line in 2D",
+           py::arg("from_pos"),
+           py::arg("to_pos"),
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("width") = 1.0);
+
+        godot_module.def("draw_polygon_2d", [bridge](py::list points, py::tuple position, double rotation, py::tuple color, bool filled) {
+            Array point_array;
+            for (auto item : points) {
+                py::tuple p = item.cast<py::tuple>();
+                point_array.push_back(Vector2(p[0].cast<double>(), p[1].cast<double>()));
+            }
+
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            bridge->draw_polygon_2d(point_array, pos_vec, rotation, col, filled);
+        }, "Draw a polygon in 2D",
+           py::arg("points"),
+           py::arg("position") = py::make_tuple(0, 0),
+           py::arg("rotation") = 0.0,
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("filled") = true);
+
+        godot_module.def("build_mesh_2d", [bridge](py::list vertices, py::list colors, py::list uvs, py::tuple position, double rotation, py::tuple color) {
+            Array vert_array;
+            for (auto item : vertices) {
+                py::tuple v = item.cast<py::tuple>();
+                vert_array.push_back(Vector2(v[0].cast<double>(), v[1].cast<double>()));
+            }
+
+            Array col_array;
+            for (auto item : colors) {
+                py::tuple c = item.cast<py::tuple>();
+                col_array.push_back(Color(c[0].cast<float>(), c[1].cast<float>(), c[2].cast<float>(), c.size() > 3 ? c[3].cast<float>() : 1.0f));
+            }
+
+            Array uv_array;
+            for (auto item : uvs) {
+                py::tuple u = item.cast<py::tuple>();
+                uv_array.push_back(Vector2(u[0].cast<double>(), u[1].cast<double>()));
+            }
+
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            bridge->build_mesh_2d(vert_array, col_array, uv_array, pos_vec, rotation, col);
+        }, "Build a custom 2D mesh",
+           py::arg("vertices"),
+           py::arg("colors") = py::list(),
+           py::arg("uvs") = py::list(),
+           py::arg("position") = py::make_tuple(0, 0),
+           py::arg("rotation") = 0.0,
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
         // Legacy API - kept for compatibility
