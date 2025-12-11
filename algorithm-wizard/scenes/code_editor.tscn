@@ -31,8 +31,8 @@ rich_text_output = NodePath("../VBoxContainer/VSplitContainer/MarginContainer/Ri
 
 [node name="CodeRunner" type="Node" parent="." node_paths=PackedStringArray("run_btn", "compile_btn", "code_edit", "debug_panel")]
 script = ExtResource("3_cctyv")
-run_btn = NodePath("../VBoxContainer/HBoxContainer/RunBtn")
-compile_btn = NodePath("../VBoxContainer/HBoxContainer/CompileBtn")
+run_btn = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/RunBtn")
+compile_btn = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/CompileBtn")
 code_edit = NodePath("../VBoxContainer/VSplitContainer/CodeEdit")
 debug_panel = NodePath("../DebugPanel")
 
@@ -52,14 +52,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="RunBtn" type="Button" parent="VBoxContainer/HBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="RunBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Run"
 
-[node name="CompileBtn" type="Button" parent="VBoxContainer/HBoxContainer"]
+[node name="CompileBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Compile"
 
@@ -73,23 +76,19 @@ size_flags_vertical = 3
 [node name="CodeEdit" type="CodeEdit" parent="VBoxContainer/VSplitContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-text = "from godot import create_scene_3d, add_camera, draw_box, draw_sphere, draw_cylinder, draw_torus
+text = "from godot import *
 
-scene = create_scene_3d()
-
-add_camera(\"cam1\", \"viewport_1\", scene, {
-    \"position\": (10, 10, 10),
-    \"orbit_controls\": True
-})
+scene = scene_3d()
+camera(\"cam1\", \"viewport_1\", scene, {\"position\": (15, 15, 15), \"orbit_controls\": True})
+#camera(\"cam2\", \"viewport_2\", scene, {\"position\": (15, 15, 15), \"orbit_controls\": True})
 
 with scene:
-    draw_box((2, 2, 2), position=(0, 0, 0), color=(1, 0, 0, 1))
-
-    draw_sphere(1.5, position=(5, 0, 0), color=(0, 0, 1, 1))
-
-    draw_cylinder(0.5, 3, position=(-5, 0, 0), color=(0, 1, 0, 1))
-
-    draw_torus(0.5, 1.5, position=(0, 0, 5), color=(1, 1, 0, 1))"
+	cube = box((2, 2, 2), position=(0, 0, 0), color=(1, 0, 0, 1))
+	animate(cube, \"position\", (5, 5, 0), duration=1)
+	animate(cube, \"rotation\", (0, 45, 0), duration=1)
+	animate(cube, \"scale\", (1, 5, 1), duration=1)
+	animate(cube, \"scale\", (5, 5, 1), duration=1)
+	play()"
 placeholder_text = "code"
 minimap_draw = true
 syntax_highlighter = SubResource("CodeHighlighter_i4sis")

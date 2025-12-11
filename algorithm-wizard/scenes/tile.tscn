@@ -1,7 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://d2ou0vg2d1eyo"]
 
 [ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="1_3dk36"]
-[ext_resource type="ButtonGroup" uid="uid://c2jg2bcvvxtgl" path="res://window_selector_button_group.tres" id="2_6p3j2"]
 [ext_resource type="Script" uid="uid://vfsbjlfbh4tc" path="res://scripts/tile.gd" id="2_jy7pm"]
 [ext_resource type="PackedScene" uid="uid://bvwjbyd7480m4" path="res://viewports/viewport_holder.tscn" id="3_6p3j2"]
 [ext_resource type="PackedScene" uid="uid://mw5xpnvnx5q5" path="res://scenes/code_editor.tscn" id="4_gtpg2"]
@@ -12,6 +11,8 @@ corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_q7utx"]
 
 [node name="Tile" type="MarginContainer" node_paths=PackedStringArray("button_1", "button_2", "content_container")]
 custom_minimum_size = Vector2(20, 20)
@@ -72,7 +73,7 @@ theme_override_constants/separation = 6
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 toggle_mode = true
-button_group = ExtResource("2_6p3j2")
+button_group = SubResource("ButtonGroup_q7utx")
 text = "Viewport
 "
 
@@ -80,13 +81,13 @@ text = "Viewport
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 toggle_mode = true
-button_group = ExtResource("2_6p3j2")
+button_group = SubResource("ButtonGroup_q7utx")
 text = "Editor"
 
 [node name="ContentContainer" type="Control" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PanelContainer" type="PanelContainer" parent="."]
+[node name="TilePanelContainer" type="PanelContainer" parent="."]
 layout_mode = 2
 mouse_filter = 2

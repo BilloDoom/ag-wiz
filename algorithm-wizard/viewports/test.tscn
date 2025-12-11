@@ -1,4 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0oqgmke7v1iu"]
+[gd_scene load_steps=3 format=3 uid="uid://b0oqgmke7v1iu"]
+
+[ext_resource type="Script" uid="uid://chmmqq7yrt8h5" path="res://viewports/testscripttest.gd" id="1_1i6ns"]
 
 [sub_resource type="CodeHighlighter" id="CodeHighlighter_1ylis"]
 number_color = Color(0.50980395, 0.8, 0.70980394, 1)
@@ -25,6 +27,7 @@ grow_vertical = 2
 [node name="CodeRunner" type="Node" parent="."]
 
 [node name="Panel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -125,3 +128,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "output"
+
+[node name="VSplitContainer" type="VSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = 210
+script = ExtResource("1_1i6ns")
+
+[node name="Panel" type="Panel" parent="VSplitContainer"]
+layout_mode = 2
+
+[node name="Panel2" type="Panel" parent="VSplitContainer"]
+layout_mode = 2

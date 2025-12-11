@@ -65,9 +65,37 @@ func create_scene_3d() -> String:
 
 	var world = World3D.new()
 
+	# Create environment for the 3D world
+	var environment = Environment.new()
+	environment.background_mode = Environment.BG_SKY
+	environment.sky = Sky.new()
+	environment.sky.sky_material = ProceduralSkyMaterial.new()
+
+	# Configure sky
+	var sky_material = environment.sky.sky_material as ProceduralSkyMaterial
+	sky_material.sky_top_color = Color(0.385, 0.454, 0.55)  # Light blue
+	sky_material.sky_horizon_color = Color(0.646, 0.656, 0.67)  # Horizon
+	sky_material.ground_bottom_color = Color(0.2, 0.169, 0.133)  # Dark ground
+	sky_material.ground_horizon_color = Color(0.646, 0.656, 0.67)
+
+	# Ambient light
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	environment.ambient_light_energy = 0.5
+
+	world.environment = environment
+
 	# Create a root node for this scene where objects will be added
 	var root = Node3D.new()
 	root.name = "SceneRoot_" + scene_id
+
+	# Add DirectionalLight3D (sun)
+	var sun = DirectionalLight3D.new()
+	sun.name = "Sun"
+	sun.light_energy = 1.0
+	sun.light_color = Color.WHITE
+	sun.rotation_degrees = Vector3(-45, 45, 0)  # Angle from top-right
+	sun.shadow_enabled = true
+	root.add_child(sun)
 
 	scenes[scene_id] = {
 		"type": "3d",
@@ -75,7 +103,7 @@ func create_scene_3d() -> String:
 		"root": root
 	}
 
-	print("ViewportManager: Created 3D scene '%s'" % scene_id)
+	print("ViewportManager: Created 3D scene '%s' with environment and sun" % scene_id)
 	return scene_id
 
 func create_scene_2d() -> String:

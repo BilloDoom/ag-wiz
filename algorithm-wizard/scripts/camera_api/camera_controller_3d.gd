@@ -1,7 +1,8 @@
 extends Node
 
 ## CameraController3D - Orbit camera controls for 3D viewports
-## Right-click drag to rotate, scroll wheel to zoom
+## Left-click drag to rotate, scroll wheel to zoom
+## Mouse wraps around viewport edges like Blender
 
 var camera: Camera3D = null
 var viewport_container: SubViewportContainer = null
@@ -19,6 +20,7 @@ var pitch: float = -30.0  # Vertical rotation (degrees)
 @export var max_distance: float = 50.0
 @export var min_pitch: float = -89.0
 @export var max_pitch: float = 89.0
+@export var edge_wrap_margin: float = 10.0  # Pixels from edge to wrap
 
 # State
 var is_rotating: bool = false
@@ -63,14 +65,10 @@ func _input(event: InputEvent):
 	if not camera or not mouse_inside:
 		return
 
-	# Right-click drag to rotate
+	# Left-click drag to rotate
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_RIGHT:
+		if event.button_index == MOUSE_BUTTON_LEFT:
 			is_rotating = event.pressed
-			if is_rotating:
-				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-			else:
-				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 		# Scroll wheel to zoom
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -87,6 +85,9 @@ func _input(event: InputEvent):
 		pitch -= event.relative.y * rotate_sensitivity
 		pitch = clamp(pitch, min_pitch, max_pitch)
 		_update_camera_position()
+
+		# Edge wrapping (like Blender)
+		_wrap_mouse_at_edges()
 
 func _update_camera_position():
 	"""Update camera position based on orbit parameters"""
@@ -122,3 +123,34 @@ func reset_to_defaults():
 	distance = 10.0
 	target = Vector3.ZERO
 	_update_camera_position()
+
+func _wrap_mouse_at_edges():
+	"""Wrap mouse position when it reaches viewport edges (Blender-style)"""
+	if not viewport_container or not is_rotating:
+		return
+
+	var mouse_pos = viewport_container.get_local_mouse_position()
+	var container_size = viewport_container.size
+	var new_pos = mouse_pos
+	var wrapped = false
+
+	# Check horizontal edges
+	if mouse_pos.x < edge_wrap_margin:
+		new_pos.x = container_size.x - edge_wrap_margin - 1
+		wrapped = true
+	elif mouse_pos.x > container_size.x - edge_wrap_margin:
+		new_pos.x = edge_wrap_margin + 1
+		wrapped = true
+
+	# Check vertical edges
+	if mouse_pos.y < edge_wrap_margin:
+		new_pos.y = container_size.y - edge_wrap_margin - 1
+		wrapped = true
+	elif mouse_pos.y > container_size.y - edge_wrap_margin:
+		new_pos.y = edge_wrap_margin + 1
+		wrapped = true
+
+	# Warp mouse if needed
+	if wrapped:
+		var global_pos = viewport_container.global_position + new_pos
+		viewport_container.warp_mouse(new_pos)

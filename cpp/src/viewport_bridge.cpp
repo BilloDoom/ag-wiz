@@ -315,6 +315,42 @@ Node* ViewportBridge::build_mesh_2d(const Array& vertices, const Array& colors, 
     return nullptr;
 }
 
+// Animation system implementations
+
+void ViewportBridge::queue_animation(Node* object, const String& property, const Variant& end_value, float duration, float delay, const String& easing) {
+    if (!is_inside_tree()) {
+        UtilityFunctions::printerr("ViewportBridge: Not inside tree");
+        return;
+    }
+
+    Node* anim_manager = get_node_or_null("/root/AnimationManager");
+    if (!anim_manager) {
+        UtilityFunctions::printerr("ViewportBridge: AnimationManager not found");
+        return;
+    }
+
+    if (anim_manager->has_method("queue_animation")) {
+        anim_manager->call("queue_animation", object, property, end_value, duration, delay, easing);
+    }
+}
+
+void ViewportBridge::play_animations() {
+    if (!is_inside_tree()) {
+        UtilityFunctions::printerr("ViewportBridge: Not inside tree");
+        return;
+    }
+
+    Node* anim_manager = get_node_or_null("/root/AnimationManager");
+    if (!anim_manager) {
+        UtilityFunctions::printerr("ViewportBridge: AnimationManager not found");
+        return;
+    }
+
+    if (anim_manager->has_method("play_animations")) {
+        anim_manager->call("play_animations");
+    }
+}
+
 // Legacy API implementations
 bool ViewportBridge::init_3d_scene(const String& id, const Dictionary& settings) {
     Node* manager = get_viewport_manager();
@@ -440,10 +476,20 @@ void ViewportBridge::setup_python_bindings() {
         // Capture 'this' pointer for Python callbacks
         ViewportBridge* bridge = this;
 
+        // Node wrapper class for storing Godot Node pointers in Python
+        class NodeWrapper {
+        public:
+            Node* node_ptr;
+            NodeWrapper(Node* ptr) : node_ptr(ptr) {}
+        };
+
+        py::class_<NodeWrapper>(godot_module, "NodeWrapper")
+            .def_readonly("_node_ptr", &NodeWrapper::node_ptr);
+
         // New API - Scene and Camera management
         // Note: create_scene_3d and create_scene_2d are defined later with context manager support
 
-        godot_module.def("add_camera", [bridge](const std::string& camera_name, const std::string& port_id, py::object scene_obj, py::dict settings) {
+        godot_module.def("camera", [bridge](const std::string& camera_name, const std::string& port_id, py::object scene_obj, py::dict settings) {
             // Extract scene_id from either string or SceneContext object
             std::string scene_id;
             try {
@@ -525,18 +571,18 @@ void ViewportBridge::setup_python_bindings() {
             .def_readonly("scene_id", &SceneContextWrapper::scene_id);
 
         // Override create_scene functions to return context wrappers
-        godot_module.def("create_scene_3d", [bridge]() {
+        godot_module.def("scene_3d", [bridge]() {
             String scene_id = bridge->create_scene_3d();
             return SceneContextWrapper(scene_id.utf8().get_data(), bridge);
         }, "Create a new 3D scene (World3D) that can be shared across viewports");
 
-        godot_module.def("create_scene_2d", [bridge]() {
+        godot_module.def("scene_2d", [bridge]() {
             String scene_id = bridge->create_scene_2d();
             return SceneContextWrapper(scene_id.utf8().get_data(), bridge);
         }, "Create a new 2D scene (World2D) that can be shared across viewports");
 
         // Primitive drawing functions
-        godot_module.def("draw_box", [bridge](py::tuple size, py::tuple position, py::tuple rotation, py::tuple color) {
+        godot_module.def("box", [bridge](py::tuple size, py::tuple position, py::tuple rotation, py::tuple color) {
             Vector3 size_vec(
                 size[0].cast<double>(),
                 size[1].cast<double>(),
@@ -559,14 +605,15 @@ void ViewportBridge::setup_python_bindings() {
                 color.size() > 3 ? color[3].cast<float>() : 1.0f
             );
 
-            bridge->draw_box(size_vec, pos_vec, rot_vec, col);
+            Node* node = bridge->draw_box(size_vec, pos_vec, rot_vec, col);
+            return NodeWrapper(node);
         }, "Draw a box primitive in the current scene context",
            py::arg("size"),
            py::arg("position") = py::make_tuple(0, 0, 0),
            py::arg("rotation") = py::make_tuple(0, 0, 0),
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
-        godot_module.def("draw_sphere", [bridge](double radius, py::tuple position, py::tuple color) {
+        godot_module.def("sphere", [bridge](double radius, py::tuple position, py::tuple color) {
             Vector3 pos_vec(
                 position[0].cast<double>(),
                 position[1].cast<double>(),
@@ -579,13 +626,14 @@ void ViewportBridge::setup_python_bindings() {
                 color.size() > 3 ? color[3].cast<float>() : 1.0f
             );
 
-            bridge->draw_sphere(radius, pos_vec, col);
+            Node* node = bridge->draw_sphere(radius, pos_vec, col);
+            return NodeWrapper(node);
         }, "Draw a sphere primitive in the current scene context",
            py::arg("radius"),
            py::arg("position") = py::make_tuple(0, 0, 0),
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
-        godot_module.def("draw_cylinder", [bridge](double radius, double height, py::tuple position, py::tuple rotation, py::tuple color) {
+        godot_module.def("cylinder", [bridge](double radius, double height, py::tuple position, py::tuple rotation, py::tuple color) {
             Vector3 pos_vec(
                 position[0].cast<double>(),
                 position[1].cast<double>(),
@@ -603,7 +651,8 @@ void ViewportBridge::setup_python_bindings() {
                 color.size() > 3 ? color[3].cast<float>() : 1.0f
             );
 
-            bridge->draw_cylinder(radius, height, pos_vec, rot_vec, col);
+            Node* node = bridge->draw_cylinder(radius, height, pos_vec, rot_vec, col);
+            return NodeWrapper(node);
         }, "Draw a cylinder primitive in the current scene context",
            py::arg("radius"),
            py::arg("height"),
@@ -611,7 +660,7 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("rotation") = py::make_tuple(0, 0, 0),
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
-        godot_module.def("draw_torus", [bridge](double inner_radius, double outer_radius, py::tuple position, py::tuple rotation, py::tuple color) {
+        godot_module.def("torus", [bridge](double inner_radius, double outer_radius, py::tuple position, py::tuple rotation, py::tuple color) {
             Vector3 pos_vec(
                 position[0].cast<double>(),
                 position[1].cast<double>(),
@@ -629,7 +678,8 @@ void ViewportBridge::setup_python_bindings() {
                 color.size() > 3 ? color[3].cast<float>() : 1.0f
             );
 
-            bridge->draw_torus(inner_radius, outer_radius, pos_vec, rot_vec, col);
+            Node* node = bridge->draw_torus(inner_radius, outer_radius, pos_vec, rot_vec, col);
+            return NodeWrapper(node);
         }, "Draw a torus primitive in the current scene context",
            py::arg("inner_radius"),
            py::arg("outer_radius"),
@@ -638,7 +688,7 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
         // 3D Mesh building functions
-        godot_module.def("create_mesh_builder_3d", [bridge](py::tuple position, py::tuple rotation) {
+        godot_module.def("mesh_builder_3d", [bridge](py::tuple position, py::tuple rotation) {
             Vector3 pos_vec(
                 position[0].cast<double>(),
                 position[1].cast<double>(),
@@ -713,7 +763,7 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
         // 2D Drawing functions
-        godot_module.def("draw_rect_2d", [bridge](py::tuple size, py::tuple position, double rotation, py::tuple color, bool filled) {
+        godot_module.def("rect", [bridge](py::tuple size, py::tuple position, double rotation, py::tuple color, bool filled) {
             Vector2 size_vec(size[0].cast<double>(), size[1].cast<double>());
             Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
             Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
@@ -726,7 +776,7 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("color") = py::make_tuple(1, 1, 1, 1),
            py::arg("filled") = true);
 
-        godot_module.def("draw_circle_2d", [bridge](double radius, py::tuple position, py::tuple color, bool filled, int segments) {
+        godot_module.def("circle", [bridge](double radius, py::tuple position, py::tuple color, bool filled, int segments) {
             Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
             Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
 
@@ -738,7 +788,7 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("filled") = true,
            py::arg("segments") = 32);
 
-        godot_module.def("draw_line_2d", [bridge](py::tuple from_pos, py::tuple to_pos, py::tuple color, double width) {
+        godot_module.def("line", [bridge](py::tuple from_pos, py::tuple to_pos, py::tuple color, double width) {
             Vector2 from_vec(from_pos[0].cast<double>(), from_pos[1].cast<double>());
             Vector2 to_vec(to_pos[0].cast<double>(), to_pos[1].cast<double>());
             Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
@@ -750,7 +800,7 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("color") = py::make_tuple(1, 1, 1, 1),
            py::arg("width") = 1.0);
 
-        godot_module.def("draw_polygon_2d", [bridge](py::list points, py::tuple position, double rotation, py::tuple color, bool filled) {
+        godot_module.def("polygon", [bridge](py::list points, py::tuple position, double rotation, py::tuple color, bool filled) {
             Array point_array;
             for (auto item : points) {
                 py::tuple p = item.cast<py::tuple>();
@@ -798,6 +848,53 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("position") = py::make_tuple(0, 0),
            py::arg("rotation") = 0.0,
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
+
+        // Animation system
+        godot_module.def("animate", [bridge](py::object obj, const std::string& property, py::object end_value, double duration, double delay, const std::string& easing) {
+            // Extract Node* from NodeWrapper
+            Node* node_ptr = nullptr;
+
+            try {
+                // Try to extract NodeWrapper
+                NodeWrapper wrapper = py::cast<NodeWrapper>(obj);
+                node_ptr = wrapper.node_ptr;
+            } catch (...) {
+                UtilityFunctions::printerr("ViewportBridge: Cannot extract Node from Python object for animation. Did you pass a drawn object?");
+                return;
+            }
+
+            if (!node_ptr) {
+                UtilityFunctions::printerr("ViewportBridge: Null object passed to animate()");
+                return;
+            }
+
+            // Convert end_value to Variant
+            Variant end_variant;
+            if (py::isinstance<py::tuple>(end_value)) {
+                py::tuple tuple = end_value.cast<py::tuple>();
+                if (tuple.size() == 3) {
+                    // Vector3
+                    end_variant = Vector3(tuple[0].cast<double>(), tuple[1].cast<double>(), tuple[2].cast<double>());
+                } else if (tuple.size() == 2) {
+                    // Vector2
+                    end_variant = Vector2(tuple[0].cast<double>(), tuple[1].cast<double>());
+                }
+            } else if (py::isinstance<py::float_>(end_value) || py::isinstance<py::int_>(end_value)) {
+                end_variant = end_value.cast<double>();
+            }
+
+            bridge->queue_animation(node_ptr, String(property.c_str()), end_variant, duration, delay, String(easing.c_str()));
+        }, "Queue an animation for an object",
+           py::arg("object"),
+           py::arg("property"),
+           py::arg("end_value"),
+           py::arg("duration") = 1.0,
+           py::arg("delay") = 0.0,
+           py::arg("easing") = "linear");
+
+        godot_module.def("play", [bridge]() {
+            bridge->play_animations();
+        }, "Execute all queued animations");
 
         // Legacy API - kept for compatibility
         godot_module.def("init_3d_scene", [bridge](const std::string& id, py::dict settings) {

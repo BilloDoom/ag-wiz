@@ -20,6 +20,7 @@ config/icon="uid://baworexhgpvrv"
 
 ViewportManager="*res://scripts/viewport_manager.gd"
 ScriptManager="*res://scripts/script_manager.gd"
+AnimationManager="*res://scripts/animation_manager.gd"
 
 [global_group]
 

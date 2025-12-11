@@ -58,6 +58,10 @@ public:
     // 2D Mesh building
     Node* build_mesh_2d(const Array& vertices, const Array& colors, const Array& uvs, const Vector2& position, float rotation, const Color& color);
 
+    // Animation system
+    void queue_animation(Node* object, const String& property, const Variant& end_value, float duration, float delay, const String& easing);
+    void play_animations();
+
     // Viewport management (legacy - kept for compatibility)
     bool init_3d_scene(const String& id, const Dictionary& settings);
     bool init_2d_scene(const String& id, const Dictionary& settings);

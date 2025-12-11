@@ -102,7 +102,7 @@ func split_tile(tile_node: Node) -> void:
 	
 	# Set split offset
 	await get_tree().process_frame
-	if container is HSplitContainer:
+	if container is SplitContainer:
 		container.split_offset = int(container.size.x / 2)
 	else:
 		container.split_offset = int(container.size.y / 2)
