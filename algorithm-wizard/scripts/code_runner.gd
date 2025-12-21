@@ -22,7 +22,7 @@ func _ready():
 
 	# Connect button signals
 	run_btn.pressed.connect(_on_run_pressed)
-	compile_btn.pressed.connect(_on_compile_pressed)
+	#compile_btn.pressed.connect(_on_compile_pressed)
 
 	debug_panel.log_message("Python runtime initialized")
 	debug_panel.log_message("Viewport API available in Python")

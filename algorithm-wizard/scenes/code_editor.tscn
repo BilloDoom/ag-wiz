@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://mw5xpnvnx5q5"]
+[gd_scene load_steps=6 format=3 uid="uid://mw5xpnvnx5q5"]
 
 [ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="1_q0psu"]
 [ext_resource type="Script" uid="uid://bneqx57s2f3c5" path="res://scripts/debug_panel.gd" id="2_xqpb2"]
 [ext_resource type="Script" uid="uid://cqqbtntb7ce5v" path="res://scripts/code_runner.gd" id="3_cctyv"]
+[ext_resource type="Script" uid="uid://dceu6k8r1qdgr" path="res://scripts/script_box.gd" id="4_cctyv"]
 
 [sub_resource type="CodeHighlighter" id="CodeHighlighter_i4sis"]
 number_color = Color(0.50980395, 0.8, 0.70980394, 1)
@@ -32,9 +33,17 @@ rich_text_output = NodePath("../VBoxContainer/VSplitContainer/MarginContainer/Ri
 [node name="CodeRunner" type="Node" parent="." node_paths=PackedStringArray("run_btn", "compile_btn", "code_edit", "debug_panel")]
 script = ExtResource("3_cctyv")
 run_btn = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/RunBtn")
-compile_btn = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/CompileBtn")
+compile_btn = NodePath("")
 code_edit = NodePath("../VBoxContainer/VSplitContainer/CodeEdit")
 debug_panel = NodePath("../DebugPanel")
+
+[node name="ScriptBox" type="Node" parent="." node_paths=PackedStringArray("new_script_btn", "save_btn", "line_edit", "open_script_button", "code_edit")]
+script = ExtResource("4_cctyv")
+new_script_btn = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/NewScriptBtn")
+save_btn = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/SaveBtn")
+line_edit = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/LineEdit")
+open_script_button = NodePath("../VBoxContainer/MarginContainer/HBoxContainer/OpenScriptBtn")
+code_edit = NodePath("../VBoxContainer/VSplitContainer/CodeEdit")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -54,17 +63,34 @@ grow_vertical = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer"]
 layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="NewScriptBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "+ New"
+
+[node name="SaveBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Save"
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="OpenScriptBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Open
+"
 
 [node name="RunBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Run"
-
-[node name="CompileBtn" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
-layout_mode = 2
-text = "Compile"
 
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
