@@ -1,6 +1,6 @@
 # To do:
-- Add global script saving
-- add Script saving local
+- ~~Add global script saving~~
+- ~~add Script saving local~~
 - add Script saving remote
 - add Script sharing
 - add hidden / visible tags for user made scripts

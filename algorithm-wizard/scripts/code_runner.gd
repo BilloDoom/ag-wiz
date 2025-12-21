@@ -1,6 +1,8 @@
 extends Node
 class_name CodeRunner
 
+signal script_execution_started(script_name: String)
+
 @export var run_btn: Button
 @export var compile_btn: Button
 @export var code_edit: CodeEdit
@@ -31,6 +33,19 @@ func _on_run_pressed():
 	var code = code_edit.text
 	debug_panel.clear_output()
 	debug_panel.log_message("Running script...")
+
+	# Get script name from parent ScriptBox
+	var script_box = get_parent().get_node("ScriptBox")
+	var script_name = "Unknown"
+	if script_box and script_box.current_script_id != "":
+		var script_manager = get_node("/root/ScriptManager")
+		if script_manager:
+			var script = script_manager.get_script_(script_box.current_script_id)
+			if script:
+				script_name = script.name
+
+	# Emit signal that script execution is starting
+	script_execution_started.emit(script_name)
 
 	# Clean up previous scenes/cameras before running new script
 	var viewport_manager = get_node("/root/ViewportManager")
