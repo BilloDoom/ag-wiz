@@ -1,0 +1,37 @@
+[center][font_size=22][b]Post-Processing Pass[/b][/font_size][/center]
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=16][b]Overview[/b][/font_size]
+The post-processing pass applies [b]lighting calculations[/b] and visual effects to the rasterized image. This is where the scene comes to life with shadows, reflections, and atmospheric effects.
+
+[font_size=16][b]What Happens[/b][/font_size]
+[color=#ff88ff]1.[/color] [b]Lighting Calculations[/b]
+   For each fragment, the GPU calculates light contributions:
+   • [color=#ffaa55]Direct Lighting[/color] - Light directly hitting surfaces
+   • [color=#ffaa55]Shadows[/color] - Areas occluded from light sources
+   • [color=#ffaa55]Ambient[/color] - Indirect environmental lighting
+
+[color=#ff88ff]2.[/color] [b]Advanced Lighting[/b]
+   Modern renderers add sophisticated effects:
+   • [color=#88aaff]SSAO[/color] - Screen-space ambient occlusion
+   • [color=#88aaff]SSR[/color] - Screen-space reflections
+   • [color=#88aaff]SDFGI/GI[/color] - Global illumination
+
+[color=#ff88ff]3.[/color] [b]Post Effects[/b]
+   Final image adjustments:
+   • [color=#88ff88]Tonemapping[/color] - HDR to LDR conversion
+   • [color=#88ff88]Bloom/Glow[/color] - Bright area bleeding
+   • [color=#88ff88]Color Grading[/color] - Artistic color adjustments
+   • [color=#88ff88]Anti-Aliasing[/color] - Edge smoothing (TAA/FXAA)
+
+[font_size=16][b]Full Render View[/b][/font_size]
+This visualization shows the [b]complete rendered output[/b] with:
+• Full lighting and shadow calculations
+• Environment/skybox rendering
+• All post-processing effects enabled
+• Final composited image
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=14][color=#aaaaaa][i]Tip: Compare with rasterization pass to see how much lighting and effects contribute to the final image.[/i][/color][/font_size]

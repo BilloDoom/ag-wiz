@@ -117,13 +117,20 @@ func create_scene_2d() -> String:
 	var root = Node2D.new()
 	root.name = "SceneRoot_" + scene_id
 
+	# Create a CanvasLayer for UI elements (on top of everything)
+	var ui_layer = CanvasLayer.new()
+	ui_layer.name = "UILayer"
+	ui_layer.layer = 100  # High layer to ensure UI is on top
+	root.add_child(ui_layer)
+
 	scenes[scene_id] = {
 		"type": "2d",
 		"world": world,
-		"root": root
+		"root": root,
+		"ui_layer": ui_layer
 	}
 
-	print("ViewportManager: Created 2D scene '%s'" % scene_id)
+	print("ViewportManager: Created 2D scene '%s' with UI layer" % scene_id)
 	return scene_id
 
 func add_camera_to_viewport(camera_name: String, port_id: String, scene_id: String, settings: Dictionary = {}) -> bool:
@@ -283,3 +290,110 @@ func draw_polygon_2d(points: Array, position: Vector2 = Vector2.ZERO, rotation: 
 func build_mesh_2d(vertices: Array, colors: Array = [], uvs: Array = [], position: Vector2 = Vector2.ZERO, rotation: float = 0.0, color: Color = Color.WHITE) -> Polygon2D:
 	_ensure_drawing_apis()
 	return drawing_api_2d.build_mesh_2d(vertices, colors, uvs, position, rotation, color)
+
+# UI Label API for 2D Scenes
+
+func create_ui_label(label_id: String, text: String, position: Vector2, font_size: int = 16, color: Color = Color.WHITE, scene_id: String = "") -> Node:
+	"""Create a simple UI label on the canvas layer"""
+	var target_scene_id = scene_id if scene_id != "" else current_scene_context
+
+	if target_scene_id == "":
+		push_error("ViewportManager: No scene context for UI label creation")
+		return null
+
+	if not scenes.has(target_scene_id):
+		push_error("ViewportManager: Scene '%s' not found" % target_scene_id)
+		return null
+
+	var scene_data = scenes[target_scene_id]
+	if scene_data["type"] != "2d":
+		push_error("ViewportManager: UI labels only supported for 2D scenes")
+		return null
+
+	if not scene_data.has("ui_layer"):
+		push_error("ViewportManager: Scene missing UI layer")
+		return null
+
+	# Load UILabel class
+	var UILabelClass = load("res://scripts/ui_label.gd")
+	var label = UILabelClass.new()
+	label.setup(label_id, text, position, font_size, color)
+	label.name = label_id
+
+	# Add to UI layer
+	scene_data["ui_layer"].add_child(label)
+
+	print("ViewportManager: Created UI label '%s' in scene '%s'" % [label_id, target_scene_id])
+	return label
+
+func draw_ui_line(line_id: String, from_pos: Vector2, to_pos: Vector2, color: Color = Color.WHITE, width: float = 2.0, scene_id: String = "") -> Node:
+	"""Draw a line on the UI canvas layer"""
+	var target_scene_id = scene_id if scene_id != "" else current_scene_context
+
+	if target_scene_id == "":
+		push_error("ViewportManager: No scene context for UI line")
+		return null
+
+	if not scenes.has(target_scene_id):
+		push_error("ViewportManager: Scene '%s' not found" % target_scene_id)
+		return null
+
+	var scene_data = scenes[target_scene_id]
+	if scene_data["type"] != "2d":
+		push_error("ViewportManager: UI lines only supported for 2D scenes")
+		return null
+
+	if not scene_data.has("ui_layer"):
+		push_error("ViewportManager: Scene missing UI layer")
+		return null
+
+	# Create a Line2D on the UI layer
+	var line = Line2D.new()
+	line.name = line_id
+	line.add_point(from_pos)
+	line.add_point(to_pos)
+	line.default_color = color
+	line.width = width
+	line.z_index = 1
+
+	scene_data["ui_layer"].add_child(line)
+	print("ViewportManager: Created UI line '%s' in scene '%s'" % [line_id, target_scene_id])
+	return line
+
+func draw_ui_box(box_id: String, rect: Rect2, color: Color = Color.WHITE, width: float = 2.0, scene_id: String = "") -> Node:
+	"""Draw a bounding box on the UI canvas layer"""
+	var target_scene_id = scene_id if scene_id != "" else current_scene_context
+
+	if target_scene_id == "":
+		push_error("ViewportManager: No scene context for UI box")
+		return null
+
+	if not scenes.has(target_scene_id):
+		push_error("ViewportManager: Scene '%s' not found" % target_scene_id)
+		return null
+
+	var scene_data = scenes[target_scene_id]
+	if scene_data["type"] != "2d":
+		push_error("ViewportManager: UI boxes only supported for 2D scenes")
+		return null
+
+	if not scene_data.has("ui_layer"):
+		push_error("ViewportManager: Scene missing UI layer")
+		return null
+
+	# Create a Line2D to draw the box outline
+	var line = Line2D.new()
+	line.name = box_id
+	line.add_point(rect.position)  # Top-left
+	line.add_point(Vector2(rect.position.x + rect.size.x, rect.position.y))  # Top-right
+	line.add_point(rect.position + rect.size)  # Bottom-right
+	line.add_point(Vector2(rect.position.x, rect.position.y + rect.size.y))  # Bottom-left
+	line.add_point(rect.position)  # Back to top-left (close the box)
+	line.default_color = color
+	line.width = width
+	line.closed = true
+	line.z_index = 1
+
+	scene_data["ui_layer"].add_child(line)
+	print("ViewportManager: Created UI box '%s' in scene '%s'" % [box_id, target_scene_id])
+	return line

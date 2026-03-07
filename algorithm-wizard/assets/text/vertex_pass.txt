@@ -1,0 +1,29 @@
+[center][font_size=22][b]Vertex Pass[/b][/font_size][/center]
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=16][b]Overview[/b][/font_size]
+The vertex pass is the [b]first stage[/b] of the rendering pipeline. During this stage, the GPU processes each vertex of every mesh in the scene.
+
+[font_size=16][b]What Happens[/b][/font_size]
+[color=#88ff88]1.[/color] [b]Vertex Fetching[/b]
+   The GPU reads vertex data from buffers (position, normal, UV, etc.)
+
+[color=#88ff88]2.[/color] [b]Vertex Shader Execution[/b]
+   Each vertex is transformed through several coordinate spaces:
+   [code]Local Space → World Space → View Space → Clip Space[/code]
+
+[color=#88ff88]3.[/color] [b]Matrix Transformations[/b]
+   • [color=#ffaa55]Model Matrix[/color] - Transforms from local to world space
+   • [color=#ffaa55]View Matrix[/color] - Transforms from world to camera space
+   • [color=#ffaa55]Projection Matrix[/color] - Applies perspective/orthographic projection
+
+[font_size=16][b]Wireframe Visualization[/b][/font_size]
+The wireframe view shows the [b]edge connectivity[/b] between vertices, revealing:
+• Mesh topology and structure
+• Triangle density and distribution
+• How complex geometry is constructed
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=14][color=#aaaaaa][i]Tip: Dense wireframes indicate high polygon counts. Optimize meshes by reducing vertices in flat areas.[/i][/color][/font_size]

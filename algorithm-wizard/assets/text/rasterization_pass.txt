@@ -1,0 +1,34 @@
+[center][font_size=22][b]Rasterization Pass[/b][/font_size][/center]
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=16][b]Overview[/b][/font_size]
+The rasterization pass converts [b]vector geometry[/b] (triangles) into [b]discrete pixels[/b] (fragments). This is the core of real-time rendering.
+
+[font_size=16][b]What Happens[/b][/font_size]
+[color=#88aaff]1.[/color] [b]Primitive Assembly[/b]
+   Vertices are grouped into triangles based on index buffers.
+
+[color=#88aaff]2.[/color] [b]Clipping[/b]
+   Triangles outside the view frustum are discarded or clipped.
+
+[color=#88aaff]3.[/color] [b]Rasterization[/b]
+   Each triangle is converted to a set of [b]fragments[/b] (potential pixels):
+   [code]Triangle → Fragment Grid → Pixel Coverage[/code]
+
+[color=#88aaff]4.[/color] [b]Fragment Shader Execution[/b]
+   For each fragment, the GPU calculates:
+   • [color=#ff8888]Base Color[/color] - Material albedo/diffuse
+   • [color=#ff8888]Lighting[/color] - Direct and indirect illumination
+   • [color=#ff8888]Texturing[/color] - Sampled texture colors
+
+[font_size=16][b]Raw Color View[/b][/font_size]
+This visualization shows the [b]raw rasterized output[/b] with:
+• No tonemapping (linear color space)
+• No post-processing effects (bloom, SSR, SSAO)
+• No color grading or adjustments
+• Pure fragment shader output
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=14][color=#aaaaaa][i]Tip: Compare with post-processed output to see how effects like bloom and tonemapping affect the final image.[/i][/color][/font_size]

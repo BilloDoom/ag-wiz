@@ -2,6 +2,7 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
+#include <godot_cpp/classes/window.hpp>
 
 namespace godot {
 
@@ -1013,6 +1014,188 @@ void ViewportBridge::setup_python_bindings() {
         godot_module.def("close_viewport", [bridge](const std::string& id) {
             bridge->close_viewport(String(id.c_str()));
         }, "Close a viewport");
+
+        // UI Label API for 2D scenes
+        godot_module.def("ui_label", [bridge](const std::string& label_id, const std::string& text, py::tuple position, int font_size, py::tuple color, const std::string& scene_id) {
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            Node* manager = bridge->get_viewport_manager();
+            if (manager && manager->has_method("create_ui_label")) {
+                manager->call("create_ui_label", String(label_id.c_str()), String(text.c_str()), pos_vec, font_size, col, String(scene_id.c_str()));
+            }
+        }, "Create a simple UI label on the canvas layer",
+           py::arg("label_id"),
+           py::arg("text"),
+           py::arg("position"),
+           py::arg("font_size") = 16,
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("scene_id") = "");
+
+        godot_module.def("ui_line", [bridge](const std::string& line_id, py::tuple from_pos, py::tuple to_pos, py::tuple color, double width, const std::string& scene_id) {
+            Vector2 from_vec(from_pos[0].cast<double>(), from_pos[1].cast<double>());
+            Vector2 to_vec(to_pos[0].cast<double>(), to_pos[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            Node* manager = bridge->get_viewport_manager();
+            if (manager && manager->has_method("draw_ui_line")) {
+                manager->call("draw_ui_line", String(line_id.c_str()), from_vec, to_vec, col, width, String(scene_id.c_str()));
+            }
+        }, "Draw a line on the UI canvas layer",
+           py::arg("line_id"),
+           py::arg("from_pos"),
+           py::arg("to_pos"),
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("width") = 2.0,
+           py::arg("scene_id") = "");
+
+        godot_module.def("ui_box", [bridge](const std::string& box_id, py::tuple position, py::tuple size, py::tuple color, double width, const std::string& scene_id) {
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Vector2 size_vec(size[0].cast<double>(), size[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            // Create Rect2
+            Rect2 rect(pos_vec, size_vec);
+
+            Node* manager = bridge->get_viewport_manager();
+            if (manager && manager->has_method("draw_ui_box")) {
+                manager->call("draw_ui_box", String(box_id.c_str()), rect, col, width, String(scene_id.c_str()));
+            }
+        }, "Draw a bounding box on the UI canvas layer",
+           py::arg("box_id"),
+           py::arg("position"),
+           py::arg("size"),
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("width") = 2.0,
+           py::arg("scene_id") = "");
+
+        // Global state for async execution (shared with code_runner.gd via AsyncScriptRunner)
+        struct AsyncExecutionState {
+            py::object generator;
+            bool is_active = false;
+        };
+        static AsyncExecutionState* g_async_exec = new AsyncExecutionState();
+
+        // wait(seconds) - returns a wait request that can be yielded
+        godot_module.def("wait", [](double seconds) -> py::dict {
+            py::dict request;
+            request["type"] = "wait";
+            request["duration"] = seconds;
+            return request;
+        }, "Create a wait request for the specified duration (in seconds)",
+           py::arg("seconds"));
+
+        // await_input() - returns an input request that can be yielded
+        godot_module.def("await_input", []() -> py::dict {
+            py::dict request;
+            request["type"] = "input";
+            return request;
+        }, "Create an input request that waits for user to press Continue");
+
+        // run_async(generator) - starts async execution of a generator function
+        godot_module.def("run_async", [bridge](py::object gen) {
+            // Get the async runner node via node path
+            if (!bridge->is_inside_tree()) {
+                UtilityFunctions::printerr("run_async: ViewportBridge not in tree");
+                return;
+            }
+
+            // Try to find AsyncScriptRunner node (it's a child of CodeRunner)
+            SceneTree* tree = bridge->get_tree();
+            if (!tree) {
+                UtilityFunctions::printerr("run_async: SceneTree not found");
+                return;
+            }
+
+            // Get CodeEditor control
+            Node* code_editor = tree->get_root()->get_node_or_null(NodePath("/root/Main/CodeEditor"));
+            if (!code_editor) {
+                UtilityFunctions::printerr("run_async: CodeEditor not found");
+                return;
+            }
+
+            // Get CodeRunner
+            Node* code_runner = code_editor->get_node_or_null(NodePath("CodeRunner"));
+            if (!code_runner) {
+                UtilityFunctions::printerr("run_async: CodeRunner not found");
+                return;
+            }
+
+            // Get AsyncScriptRunner
+            Node* async_runner = code_runner->get_node_or_null(NodePath("AsyncScriptRunner"));
+            if (!async_runner) {
+                UtilityFunctions::printerr("run_async: AsyncScriptRunner not found");
+                return;
+            }
+
+            // Store the generator globally for the async system
+            g_async_exec->generator = gen;
+            g_async_exec->is_active = true;
+
+            // Start iterating the generator
+            try {
+                py::object result = gen.attr("__next__")();
+
+                // Check if it's a wait/input request
+                if (py::isinstance<py::dict>(result)) {
+                    py::dict request = result.cast<py::dict>();
+                    std::string type = request["type"].cast<std::string>();
+
+                    if (type == "wait") {
+                        double duration = request["duration"].cast<double>();
+                        async_runner->call("start_wait", duration);
+                    } else if (type == "input") {
+                        async_runner->call("start_input_wait");
+                    }
+                }
+
+            } catch (const py::stop_iteration&) {
+                // Generator completed immediately
+                g_async_exec->is_active = false;
+                async_runner->call("on_generator_complete");
+            } catch (const py::error_already_set& e) {
+                UtilityFunctions::printerr("run_async: Python error: ", String(e.what()));
+                g_async_exec->is_active = false;
+            }
+
+        }, "Start async execution of a generator function",
+           py::arg("generator"));
+
+        // resume_async() - resumes async execution (called internally by AsyncScriptRunner)
+        godot_module.def("resume_async", []() -> py::dict {
+            py::dict empty;
+
+            if (!g_async_exec->is_active) {
+                return empty;
+            }
+
+            try {
+                py::object result = g_async_exec->generator.attr("__next__")();
+
+                // Return the request dict so Godot can handle it
+                if (py::isinstance<py::dict>(result)) {
+                    // Store for next iteration
+                    return result.cast<py::dict>();
+                }
+
+            } catch (const py::stop_iteration&) {
+                // Generator completed
+                g_async_exec->is_active = false;
+                py::dict completion;
+                completion["type"] = "complete";
+                return completion;
+            } catch (const py::error_already_set& e) {
+                UtilityFunctions::printerr("resume_async: Python error: ", String(e.what()));
+                g_async_exec->is_active = false;
+                py::dict error;
+                error["type"] = "error";
+                error["message"] = std::string(e.what());
+                return error;
+            }
+
+            return empty;
+
+        }, "Resume async execution after a wait/input (internal use)");
 
         // Mark bindings as registered
         bindings_registered = true;

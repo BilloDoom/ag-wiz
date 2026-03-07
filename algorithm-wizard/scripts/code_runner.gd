@@ -4,12 +4,14 @@ class_name CodeRunner
 signal script_execution_started(script_name: String)
 
 @export var run_btn: Button
+@export var continue_btn: Button
 @export var compile_btn: Button
 @export var code_edit: CodeEdit
 @export var debug_panel: CodeLogger
 
 var script_runtime: ScriptRuntime
 var viewport_bridge: ViewportBridge
+var async_runner: AsyncScriptRunner
 
 func _ready():
 	# Initialize Python runtime
@@ -22,12 +24,22 @@ func _ready():
 	add_child(viewport_bridge)
 	viewport_bridge.setup_python_bindings()
 
+	# Setup async script runner
+	async_runner = AsyncScriptRunner.new()
+	async_runner.name = "AsyncScriptRunner"
+	add_child(async_runner)
+
+	# Give async runner reference to continue button
+	async_runner.continue_button = continue_btn
+
 	# Connect button signals
 	run_btn.pressed.connect(_on_run_pressed)
+	continue_btn.pressed.connect(_on_continue_pressed)
 	#compile_btn.pressed.connect(_on_compile_pressed)
 
 	debug_panel.log_message("Python runtime initialized")
 	debug_panel.log_message("Viewport API available in Python")
+	debug_panel.log_message("Async execution system ready")
 
 func _on_run_pressed():
 	var code = code_edit.text
@@ -64,6 +76,11 @@ func _on_run_pressed():
 	else:
 		var error = script_runtime.get_last_error()
 		debug_panel.log_error(error)
+
+func _on_continue_pressed():
+	# User pressed continue during async execution
+	if async_runner:
+		async_runner.on_continue_pressed()
 
 func _on_compile_pressed():
 	var code = code_edit.text

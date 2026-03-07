@@ -1,0 +1,34 @@
+[center][font_size=22][b]Render Pipeline Visualizer[/b][/font_size][/center]
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=16][b]Getting Started[/b][/font_size]
+
+[color=#ffcc44]1.[/color] Enter a [b]viewport ID[/b] in the text field above
+   (e.g., "viewport_1", "port_0")
+
+[color=#ffcc44]2.[/color] Click [b]Connect[/b] to link to that viewport's World3D
+
+[color=#ffcc44]3.[/color] Select a render pass to visualize:
+
+   • [color=#88ff88][b]Vertex Pass[/b][/color]
+     Shows wireframe geometry - reveals mesh structure
+     and vertex connectivity
+
+   • [color=#88aaff][b]Rasterization Pass[/b][/color]
+     Shows raw color output - no post-processing,
+     linear color space
+
+   • [color=#888888][b]UI Pass[/b][/color]
+     [i](Coming soon)[/i]
+
+[font_size=16][b]The Rendering Pipeline[/b][/font_size]
+Modern GPUs process scenes through distinct stages:
+
+[code]Vertices → Triangles → Fragments → Pixels[/code]
+
+Each pass visualizes a different stage, helping you understand how the final image is constructed.
+
+[color=gray]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/color]
+
+[font_size=14][color=#aaaaaa][i]Use the left mouse button to orbit and scroll wheel to zoom in the visualization viewport.[/i][/color][/font_size]

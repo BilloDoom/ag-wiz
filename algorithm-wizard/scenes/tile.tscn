@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://d2ou0vg2d1eyo"]
+[gd_scene load_steps=8 format=3 uid="uid://d2ou0vg2d1eyo"]
 
 [ext_resource type="Theme" uid="uid://00j12ednk8gf" path="res://themes/main_theme.theme" id="1_3dk36"]
 [ext_resource type="Script" uid="uid://vfsbjlfbh4tc" path="res://scripts/tile.gd" id="2_jy7pm"]
 [ext_resource type="PackedScene" uid="uid://bvwjbyd7480m4" path="res://viewports/viewport_holder.tscn" id="3_6p3j2"]
 [ext_resource type="PackedScene" uid="uid://mw5xpnvnx5q5" path="res://scenes/code_editor.tscn" id="4_gtpg2"]
+[ext_resource type="PackedScene" uid="uid://ix8xsgirx64f" path="res://scenes/render_viz.tscn" id="5_6p3j2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ywnoi"]
 bg_color = Color(0.14285833, 0.14285818, 0.14285827, 1)
@@ -14,7 +15,7 @@ corner_radius_bottom_left = 4
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_q7utx"]
 
-[node name="Tile" type="MarginContainer" node_paths=PackedStringArray("button_1", "button_2", "content_container")]
+[node name="Tile" type="MarginContainer" node_paths=PackedStringArray("button_1", "button_2", "button_3", "content_container")]
 custom_minimum_size = Vector2(20, 20)
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,6 +34,8 @@ button_1 = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxCon
 button_1_scene = ExtResource("3_6p3j2")
 button_2 = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer/ButtonEditor")
 button_2_scene = ExtResource("4_gtpg2")
+button_3 = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer/ButtonRender")
+button_3_scene = ExtResource("5_6p3j2")
 content_container = NodePath("VBoxContainer/ContentContainer")
 
 [node name="Panel" type="Panel" parent="."]
@@ -84,7 +87,15 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_q7utx")
 text = "Editor"
 
+[node name="ButtonRender" type="Button" parent="VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+toggle_mode = true
+button_group = SubResource("ButtonGroup_q7utx")
+text = "Rendere"
+
 [node name="ContentContainer" type="Control" parent="VBoxContainer"]
+clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
 
