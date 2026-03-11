@@ -10,7 +10,7 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="RenderViz" type="Control" node_paths=PackedStringArray("button_vertex", "button_rasterization", "button_post_processing", "port_name_input", "button_connect", "subviewport_container", "explanation_label")]
+[node name="RenderViz" type="Control" node_paths=PackedStringArray("button_vertex", "button_rasterization", "button_post_processing", "port_name_input", "viewport_menu_btn", "button_connect", "subviewport_container", "explanation_label")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,6 +23,7 @@ button_vertex = NodePath("HSplitContainer/MarginContainer/VBoxContainer/ScrollCo
 button_rasterization = NodePath("HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer/ButtonRasterization")
 button_post_processing = NodePath("HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer/ButtonPostProcessing")
 port_name_input = NodePath("HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer/LineEdit")
+viewport_menu_btn = NodePath("HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer/ViewportMenuBtn")
 button_connect = NodePath("HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer/ButtonConnect")
 subviewport_container = NodePath("HSplitContainer/MarginContainer/VBoxContainer/SubViewportContainer")
 explanation_label = NodePath("HSplitContainer/MarginContainer2/Panel/RichTextLabel")
@@ -88,6 +89,12 @@ text = "Post-Processing"
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "Port name"
+
+[node name="ViewportMenuBtn" type="MenuButton" parent="HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "v"
 
 [node name="ButtonConnect" type="Button" parent="HSplitContainer/MarginContainer/VBoxContainer/ScrollContainer/HBoxContainer"]
 layout_mode = 2

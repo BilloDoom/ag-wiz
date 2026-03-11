@@ -15,7 +15,7 @@ corner_radius_bottom_left = 4
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_q7utx"]
 
-[node name="Tile" type="MarginContainer" node_paths=PackedStringArray("button_1", "button_2", "button_3", "content_container")]
+[node name="Tile" type="MarginContainer" node_paths=PackedStringArray("button_1", "button_2", "button_3", "button_split_h", "button_split_v", "button_close", "content_container")]
 custom_minimum_size = Vector2(20, 20)
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,6 +36,9 @@ button_2 = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxCon
 button_2_scene = ExtResource("4_gtpg2")
 button_3 = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer/ButtonRender")
 button_3_scene = ExtResource("5_6p3j2")
+button_split_h = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer/ButtonSplitH")
+button_split_v = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer/ButtonSplitV")
+button_close = NodePath("VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer/ButtonClose")
 content_container = NodePath("VBoxContainer/ContentContainer")
 
 [node name="Panel" type="Panel" parent="."]
@@ -93,6 +96,30 @@ theme_override_font_sizes/font_size = 12
 toggle_mode = true
 button_group = SubResource("ButtonGroup_q7utx")
 text = "Rendere"
+
+[node name="ButtonSplitH" type="Button" parent="VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "|"
+tooltip_text = "Split horizontally (side by side)"
+
+[node name="ButtonSplitV" type="Button" parent="VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "—"
+tooltip_text = "Split vertically (top / bottom)"
+
+[node name="ButtonClose" type="Button" parent="VBoxContainer/Panel/MarginContainer/ScrollContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "X"
+tooltip_text = "Close this tile"
 
 [node name="ContentContainer" type="Control" parent="VBoxContainer"]
 clip_contents = true

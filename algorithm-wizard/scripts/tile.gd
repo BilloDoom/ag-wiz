@@ -16,6 +16,9 @@ signal viewport_requested(tile: Tile)
 @export var button_3: BaseButton
 @export var button_3_scene: PackedScene
 
+@export var button_split_h: Button  # Split this tile side-by-side
+@export var button_split_v: Button  # Split this tile top/bottom
+@export var button_close: Button    # Close this tile
 @export var content_container: Control  # Container where window is loaded
 
 var current_window_type: String = ""
@@ -33,6 +36,14 @@ func _ready() -> void:
 	# Connect button 3
 	if button_3:
 		button_3.pressed.connect(_on_button_3_pressed)
+	
+	# Connect split buttons
+	if button_split_h:
+		button_split_h.pressed.connect(_on_split_h_pressed)
+	if button_split_v:
+		button_split_v.pressed.connect(_on_split_v_pressed)
+	if button_close:
+		button_close.pressed.connect(_on_close_pressed)
 	
 	# Load initial window type if set
 	if has_meta("window_type"):
@@ -62,6 +73,34 @@ func _on_button_3_pressed() -> void:
 		load_window(button_3.name, button_3_scene)
 	else:
 		push_warning("Tile: button_3_scene not assigned")
+
+func _on_split_h_pressed() -> void:
+	"""Split this tile side-by-side (horizontal cut)"""
+	_request_split("h")
+
+func _on_split_v_pressed() -> void:
+	"""Split this tile top/bottom (vertical cut)"""
+	_request_split("v")
+
+func _request_split(direction: String) -> void:
+	"""Walk up the tree to find TileEngine and ask it to split us"""
+	var node = get_parent()
+	while node != null:
+		if node is TileEngine:
+			node.split_tile(self, direction)
+			return
+		node = node.get_parent()
+	push_error("Tile: TileEngine not found in parent chain")
+
+func _on_close_pressed() -> void:
+	"""Ask TileEngine to close this tile"""
+	var node = get_parent()
+	while node != null:
+		if node is TileEngine:
+			node.close_tile(self)
+			return
+		node = node.get_parent()
+	push_error("Tile: TileEngine not found in parent chain")
 
 func load_window(window_type: String, scene: PackedScene) -> void:
 	"""Load a window scene, removing any existing window"""

@@ -67,9 +67,11 @@ void ScriptRuntime::initialize_python() {
         // ---------------------------------------------------------------
         // Sandbox: replace dangerous builtins and block restricted modules.
         //
-        // Blocked builtins  : open, __import__ (for os/sys/socket/etc.)
-        // Blocked modules   : os, sys, socket, urllib, requests, http,
+        // Blocked builtins  : open, __import__ (for os/socket/etc.)
+        // Blocked modules   : os, socket, urllib, requests, http,
         //                     subprocess, shutil, pathlib, ftplib, smtplib
+        // Allowed built-ins : sys, builtins, types, abc, io (needed internally
+        //                     by pybind11 – not a security risk)
         //
         // Any call to a blocked function prints a SANDBOX_WARN: sentinel
         // line which code_runner.gd intercepts and shows in magenta in the
@@ -81,7 +83,7 @@ import sys as _sys
 import builtins as _builtins
 
 _BLOCKED_MODULES = {
-    'os', 'os.path', 'sys', 'socket', 'ssl',
+    'os', 'os.path', 'socket', 'ssl',
     'urllib', 'urllib.request', 'urllib.parse', 'urllib.error',
     'http', 'http.client', 'http.server',
     'requests', 'httpx', 'aiohttp',
@@ -91,6 +93,12 @@ _BLOCKED_MODULES = {
     'ctypes', 'cffi', 'winreg', 'msvcrt',
     'multiprocessing', 'threading',
 }
+
+# Modules that are safe built-ins — silently allowed even though they
+# might look dangerous. Pybind11 also imports these internally.
+_BUILTIN_MODULES = {'sys', 'builtins', 'types', 'abc', 'io', '_io',
+                    'importlib', 'importlib._bootstrap',
+                    'importlib._bootstrap_external'}
 
 def _sandbox_warn(msg):
     # Sentinel prefix for code_runner.gd to intercept
@@ -102,6 +110,9 @@ def _blocked_open(*args, **kwargs):
 
 def _blocked_import(name, *args, **kwargs):
     top = name.split('.')[0]
+    # Always allow known safe built-ins without warning
+    if top in _BUILTIN_MODULES or name in _BUILTIN_MODULES:
+        return _real_import(name, *args, **kwargs)
     if top in _BLOCKED_MODULES or name in _BLOCKED_MODULES:
         _sandbox_warn("import '" + name + "' is not allowed – this module is restricted.")
         # Return a dummy module so attribute access doesn't immediately crash.

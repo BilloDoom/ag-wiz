@@ -35,6 +35,7 @@ var original_materials: Dictionary = {}  # node_path -> material
 @export var button_rasterization: Button
 @export var button_post_processing: Button
 @export var port_name_input: LineEdit
+@export var viewport_menu_btn: MenuButton
 @export var button_connect: Button
 @export var subviewport_container: SubViewportContainer
 @export var explanation_label: RichTextLabel
@@ -65,6 +66,9 @@ func _ready():
 		button_post_processing.pressed.connect(_on_post_processing_pass_pressed)
 	if button_connect:
 		button_connect.pressed.connect(_on_connect_pressed)
+	if viewport_menu_btn:
+		viewport_menu_btn.get_popup().index_pressed.connect(_on_viewport_selected)
+		viewport_menu_btn.about_to_popup.connect(_populate_viewport_dropdown)
 	
 	# Load and cache explanation texts
 	_load_explanation_texts()
@@ -97,6 +101,34 @@ func _on_connect_pressed():
 		return
 	
 	connect_to_viewport(port_id)
+
+func _populate_viewport_dropdown():
+	"""Populate the viewport menu with all active holders"""
+	if not viewport_menu_btn:
+		return
+	var popup = viewport_menu_btn.get_popup()
+	popup.clear()
+	var viewport_manager = get_node_or_null("/root/ViewportManager")
+	if not viewport_manager:
+		popup.add_item("(ViewportManager not found)")
+		popup.set_item_disabled(0, true)
+		return
+	var keys = viewport_manager.holders.keys()
+	if keys.size() == 0:
+		popup.add_item("(No viewports open)")
+		popup.set_item_disabled(0, true)
+		return
+	for port_id in keys:
+		popup.add_item(port_id)
+		popup.set_item_metadata(popup.get_item_count() - 1, port_id)
+
+func _on_viewport_selected(index: int):
+	"""Fill the port name input when a viewport is chosen from the menu"""
+	if not viewport_menu_btn or not port_name_input:
+		return
+	var port_id = viewport_menu_btn.get_popup().get_item_metadata(index)
+	if port_id:
+		port_name_input.text = port_id
 
 func connect_to_viewport(port_id: String) -> bool:
 	"""Connect to a viewport holder and share its World3D"""

@@ -67,19 +67,30 @@ func add_tile_bfs() -> void:
 	
 	push_warning("No available space to add tile (max depth reached)")
 
-func split_tile(tile_node: Node) -> void:
-	"""Split a tile node into two"""
+func split_tile(tile_node: Node, direction: String = "") -> void:
+	"""Split a tile node into two.
+	direction: "h" = HSplitContainer (side by side),
+	           "v" = VSplitContainer (top / bottom),
+	           ""  = auto (choose by tile aspect ratio)"""
 	var parent = tile_node.get_parent()
 	var node_index = tile_node.get_index()
 	
-	# Determine split direction based on size
+	# Determine split container type
 	var container: SplitContainer
-	if tile_node.size.x > tile_node.size.y:
+	if direction == "h":
 		container = HSplitContainer.new()
-	else:
+	elif direction == "v":
 		container = VSplitContainer.new()
+	else:
+		# Auto: split along the longer axis
+		if tile_node.size.x >= tile_node.size.y:
+			container = HSplitContainer.new()
+		else:
+			container = VSplitContainer.new()
 	
 	container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	container.dragger_visibility = SplitContainer.DRAGGER_HIDDEN_COLLAPSED
 	
 	# Remove tile from parent
@@ -100,11 +111,51 @@ func split_tile(tile_node: Node) -> void:
 		push_error("Failed to create new tile")
 		return
 	
-	# Set split offset
+	# split_offset = 0 means the divider sits exactly in the centre.
 	await get_tree().process_frame
-	if container is SplitContainer:
-		container.split_offset = int(container.size.x / 2)
-	else:
-		container.split_offset = int(container.size.y / 2)
+	container.split_offset = 0
 	
-	print("Split tile at depth, created new tile")
+	print("Split tile (%s)" % ["auto" if direction == "" else direction])
+
+func close_tile(tile_node: Node) -> void:
+	"""Remove a tile. The sibling takes over the parent SplitContainer's slot.
+	Does nothing if this is the only tile (parent is TileEngine, not a SplitContainer)."""
+	var split = tile_node.get_parent()
+	
+	# Only act when the immediate parent is a SplitContainer (i.e. there IS a sibling)
+	if not (split is SplitContainer):
+		print("TileEngine: tile is the only tile, nothing to close")
+		return
+	
+	# Find the sibling (the other child of the SplitContainer)
+	var sibling: Node = null
+	for child in split.get_children():
+		if child != tile_node:
+			sibling = child
+			break
+	
+	if sibling == null:
+		push_error("TileEngine: SplitContainer has no sibling")
+		return
+	
+	var grandparent = split.get_parent()
+	var split_index = split.get_index()
+	
+	# Detach sibling before the container is freed
+	split.remove_child(sibling)
+	grandparent.add_child(sibling)
+	grandparent.move_child(sibling, split_index)
+	
+	# Restore expand flags so sibling fills the freed space
+	if sibling is Control:
+		sibling.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sibling.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		# When promoted directly into TileEngine (not another SplitContainer),
+		# switch to anchored layout so it fills the whole area.
+		if grandparent == self:
+			sibling.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	
+	# Free the split container (tile_node is still inside it and freed with it)
+	split.queue_free()
+	
+	print("TileEngine: closed tile, sibling promoted")

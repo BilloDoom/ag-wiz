@@ -1,10 +1,5 @@
 from godot import *
 
-# --- Merge Sort Visualization ---
-# Bars are created once and physically moved between column slots.
-# slot_to_node[slot] -> node-name tracks which bar is in which column.
-# All move/color operations look up the correct node name via this map.
-
 ARRAY = [38, 27, 43, 3, 9, 82, 10, 54]
 N = len(ARRAY)
 
@@ -23,28 +18,16 @@ COL_IDLE   = (0.55, 0.55, 0.55, 1.0)
 COL_ACTIVE = (1.0,  0.85, 0.1,  1.0)
 COL_SORTED = (0.2,  0.85, 0.4,  1.0)
 
-# -------------------------------------------------------------------
-# Scene & camera
-# -------------------------------------------------------------------
 scene = scene_2d()
 camera("cam1", "viewport_1", scene, {})
 print("Scene created, camera attached")
 
-# -------------------------------------------------------------------
-# Layout helpers
-# -------------------------------------------------------------------
 def col_x(slot):
     return ORIGIN_X + slot * (BAR_W + SPACING)
 
 def bar_height(val):
     return int((val / MAX_VAL) * BAR_MAX_H) + 10
 
-# -------------------------------------------------------------------
-# Build scene: one bar + two labels per element.
-# Nodes named "bar_N", "val_N", "idx_N" by their ORIGINAL index.
-# Returns slot_to_node: list where slot_to_node[slot] = node_base_name
-# (initially slot_to_node[i] == "bar_i" for all i)
-# -------------------------------------------------------------------
 def build_scene(arr):
     slot_to_node = []
     with scene:
@@ -71,15 +54,10 @@ def set_title(text, col=(1, 1, 1, 1)):
     world_label("title", text, (-260, -220),
                 font_size=18, color=col, scene_id=scene.scene_id)
 
-# -------------------------------------------------------------------
-# Node operations – always resolve the node name through slot_to_node
-# -------------------------------------------------------------------
 def node_of(slot, slot_to_node):
-    """Return the base name for the bar currently in this slot."""
     return slot_to_node[slot]
 
 def idx_suffix(node_name):
-    """'bar_3' -> '3'"""
     return node_name.split("_")[1]
 
 def highlight_slot(slot, slot_to_node, col):
@@ -93,12 +71,6 @@ def reset_slot_colors(slots, slot_to_node):
     for s in slots:
         color_node(node_of(s, slot_to_node), COL_IDLE, ANIM_TIME * 0.5, scene.scene_id)
 
-# -------------------------------------------------------------------
-# Animate a swap of two adjacent slots.
-# Moves bar + val + idx nodes for both slots to swapped X positions.
-# Updates slot_to_node in place.
-# Returns the wait time caller should yield.
-# -------------------------------------------------------------------
 def animate_swap(slot_a, slot_b, arr, slot_to_node):
     na = node_of(slot_a, slot_to_node)   # e.g. "bar_2"
     nb = node_of(slot_b, slot_to_node)   # e.g. "bar_5"
@@ -129,16 +101,12 @@ def animate_swap(slot_a, slot_b, arr, slot_to_node):
     return ANIM_TIME + HOLD_TIME
 
 def commit_swap(slot_a, slot_b, arr, slot_to_node):
-    """Update arr and the slot->node map; snap colors to idle."""
     arr[slot_a], arr[slot_b] = arr[slot_b], arr[slot_a]
     slot_to_node[slot_a], slot_to_node[slot_b] = slot_to_node[slot_b], slot_to_node[slot_a]
 
     snap_color_node(node_of(slot_a, slot_to_node), COL_IDLE, scene.scene_id)
     snap_color_node(node_of(slot_b, slot_to_node), COL_IDLE, scene.scene_id)
 
-# -------------------------------------------------------------------
-# Merge sort (insertion-merge so each element move = one bar animation)
-# -------------------------------------------------------------------
 def merge_sort_steps(arr):
     n = len(arr)
     print("Starting merge sort: " + str(arr))
@@ -192,7 +160,4 @@ def merge_sort_steps(arr):
     mark_sorted_slots(range(n), slot_to_node)
     set_title("Sorted!", col=(0.2, 0.85, 0.4, 1))
 
-# -------------------------------------------------------------------
-# Run
-# -------------------------------------------------------------------
 run_async(merge_sort_steps(list(ARRAY)))
