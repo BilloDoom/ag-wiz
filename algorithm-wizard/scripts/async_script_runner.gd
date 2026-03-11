@@ -95,16 +95,9 @@ func _resume_generator() -> void:
 		printerr("AsyncScriptRunner: No ScriptRuntime found")
 		return
 
-	# First resume call advances the generator one step and captures any
-	# print() / SANDBOX_WARN output produced during that step.
-	var success = script_runtime.execute_script("from godot import resume_async; result = resume_async()")
-	if success:
-		_flush_sandbox_warnings(script_runtime.get_last_output())
-
-	if success:
-		var check_code = """
-import sys
-from io import StringIO
+	# Single resume call: advance the generator one step, capture the
+	# result dict it yields, then decide what to wait for next.
+	var check_code = """
 from godot import resume_async
 
 result = resume_async()
@@ -119,25 +112,25 @@ if result and isinstance(result, dict):
     elif result_type == 'error':
         print('ASYNC_ERROR:' + result.get('message', 'Unknown error'))
 """
-		success = script_runtime.execute_script(check_code)
-		if success:
-			var output = script_runtime.get_last_output()
-			_flush_sandbox_warnings(output)
+	var success = script_runtime.execute_script(check_code)
+	if success:
+		var output = script_runtime.get_last_output()
+		_flush_sandbox_warnings(output)
 
-			if "ASYNC_RESULT:wait:" in output:
-				var parts = output.split("ASYNC_RESULT:wait:")
-				if parts.size() > 1:
-					var duration = float(parts[1].strip_edges())
-					start_wait(duration)
-			elif "ASYNC_RESULT:input" in output:
-				start_input_wait()
-			elif "ASYNC_RESULT:complete" in output:
-				on_generator_complete()
-			elif "ASYNC_ERROR:" in output:
-				var parts = output.split("ASYNC_ERROR:")
-				if parts.size() > 1:
-					printerr("AsyncScriptRunner: Python error: ", parts[1])
-				on_generator_complete()
+		if "ASYNC_RESULT:wait:" in output:
+			var parts = output.split("ASYNC_RESULT:wait:")
+			if parts.size() > 1:
+				var duration = float(parts[1].strip_edges())
+				start_wait(duration)
+		elif "ASYNC_RESULT:input" in output:
+			start_input_wait()
+		elif "ASYNC_RESULT:complete" in output:
+			on_generator_complete()
+		elif "ASYNC_ERROR:" in output:
+			var parts = output.split("ASYNC_ERROR:")
+			if parts.size() > 1:
+				printerr("AsyncScriptRunner: Python error: ", parts[1])
+			on_generator_complete()
 	else:
 		var error = script_runtime.get_last_error()
 		printerr("AsyncScriptRunner: Failed to resume: ", error)
