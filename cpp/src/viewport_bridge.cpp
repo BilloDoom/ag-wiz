@@ -1069,6 +1069,30 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("width") = 2.0,
            py::arg("scene_id") = "");
 
+        godot_module.def("world_label", [bridge](const std::string& label_id, const std::string& text, py::tuple position, int font_size, py::tuple color, const std::string& scene_id) {
+            Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+
+            Node* manager = bridge->get_viewport_manager();
+            if (manager && manager->has_method("create_world_label")) {
+                manager->call("create_world_label", String(label_id.c_str()), String(text.c_str()), pos_vec, font_size, col, String(scene_id.c_str()));
+            }
+        }, "Create a world-space label that moves with the camera",
+           py::arg("label_id"),
+           py::arg("text"),
+           py::arg("position"),
+           py::arg("font_size") = 16,
+           py::arg("color") = py::make_tuple(1, 1, 1, 1),
+           py::arg("scene_id") = "");
+
+        godot_module.def("clear_scene", [bridge](const std::string& scene_id) {
+            Node* manager = bridge->get_viewport_manager();
+            if (manager && manager->has_method("clear_scene")) {
+                manager->call("clear_scene", String(scene_id.c_str()));
+            }
+        }, "Remove all drawn primitives and UI labels from a scene",
+           py::arg("scene_id") = "");
+
         // Global state for async execution (shared with code_runner.gd via AsyncScriptRunner)
         struct AsyncExecutionState {
             py::object generator;
@@ -1094,37 +1118,23 @@ void ViewportBridge::setup_python_bindings() {
 
         // run_async(generator) - starts async execution of a generator function
         godot_module.def("run_async", [bridge](py::object gen) {
-            // Get the async runner node via node path
             if (!bridge->is_inside_tree()) {
                 UtilityFunctions::printerr("run_async: ViewportBridge not in tree");
                 return;
             }
 
-            // Try to find AsyncScriptRunner node (it's a child of CodeRunner)
-            SceneTree* tree = bridge->get_tree();
-            if (!tree) {
-                UtilityFunctions::printerr("run_async: SceneTree not found");
-                return;
-            }
-
-            // Get CodeEditor control
-            Node* code_editor = tree->get_root()->get_node_or_null(NodePath("/root/Main/CodeEditor"));
-            if (!code_editor) {
-                UtilityFunctions::printerr("run_async: CodeEditor not found");
-                return;
-            }
-
-            // Get CodeRunner
-            Node* code_runner = code_editor->get_node_or_null(NodePath("CodeRunner"));
+            // ViewportBridge is a child of CodeRunner.
+            // AsyncScriptRunner is a sibling child of the same CodeRunner.
+            // Walk up one level then find the sibling – no hardcoded scene path needed.
+            Node* code_runner = bridge->get_parent();
             if (!code_runner) {
-                UtilityFunctions::printerr("run_async: CodeRunner not found");
+                UtilityFunctions::printerr("run_async: CodeRunner (parent) not found");
                 return;
             }
 
-            // Get AsyncScriptRunner
             Node* async_runner = code_runner->get_node_or_null(NodePath("AsyncScriptRunner"));
             if (!async_runner) {
-                UtilityFunctions::printerr("run_async: AsyncScriptRunner not found");
+                UtilityFunctions::printerr("run_async: AsyncScriptRunner not found under CodeRunner");
                 return;
             }
 

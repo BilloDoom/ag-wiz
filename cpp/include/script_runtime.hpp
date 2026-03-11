@@ -10,7 +10,8 @@ class ScriptRuntime : public Node {
     GDCLASS(ScriptRuntime, Node)
 
 private:
-    bool python_initialized;
+    // Per-instance output/error buffers only.
+    // The interpreter and globals are process-level statics in script_runtime.cpp.
     String last_output;
     String last_error;
 
@@ -33,6 +34,9 @@ public:
 
     // Check if Python is initialized
     bool is_python_ready() const;
+
+    // Reset the persistent globals namespace (call before each new user script run)
+    void reset_globals();
 };
 
 } // namespace godot

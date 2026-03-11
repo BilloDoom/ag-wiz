@@ -14,6 +14,13 @@ var viewport_bridge: ViewportBridge
 var async_runner: AsyncScriptRunner
 
 func _ready():
+	# Do not initialise anything when running inside the Godot editor.
+	# The GDExtension C++ classes (ScriptRuntime, ViewportBridge) are not
+	# safe to instantiate at editor-time and will crash the editor on scene
+	# preview / open.
+	if Engine.is_editor_hint():
+		return
+
 	# Initialize Python runtime
 	script_runtime = ScriptRuntime.new()
 	script_runtime.initialize_python()
@@ -63,6 +70,11 @@ func _on_run_pressed():
 	var viewport_manager = get_node("/root/ViewportManager")
 	if viewport_manager:
 		viewport_manager.cleanup_all_scenes()
+
+	# Reset Python globals so the new script starts with a clean namespace.
+	# This ensures names from the previous run (generators, variables, etc.)
+	# don't bleed into the next execution while still preserving __builtins__.
+	script_runtime.reset_globals()
 
 	# Execute the script
 	var success = script_runtime.execute_script(code)

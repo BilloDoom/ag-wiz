@@ -10,6 +10,9 @@ var tile_to_viewport_map: Dictionary = {}  # tile -> viewport_id
 signal viewport_created(viewport_id: String, tile: Tile)
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	# Connect to all tiles in the tile engine
 	if tile_engine:
 		_connect_to_tiles(tile_engine)

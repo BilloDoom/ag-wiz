@@ -4,6 +4,8 @@ class_name CodeLogger
 @export var rich_text_output: RichTextLabel
 
 func _ready():
+	if Engine.is_editor_hint():
+		return
 	clear_output()
 
 func clear_output():

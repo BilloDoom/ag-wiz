@@ -17,6 +17,9 @@ var scripts_popup: PopupMenu
 var save_queue: Array = []  # Queue for saving multiple in-memory scripts
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	# Get ScriptManager autoload
 	script_manager = get_node("/root/ScriptManager")
 	if not script_manager:

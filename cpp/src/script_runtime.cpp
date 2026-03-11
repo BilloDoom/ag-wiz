@@ -7,6 +7,26 @@
 
 namespace py = pybind11;
 
+// ---------------------------------------------------------------------------
+// Process-lifetime Python interpreter state.
+//
+// pybind11's scoped_interpreter must live for the entire duration that Python
+// is in use.  It must be constructed exactly ONCE per process.
+//
+// The problem this solves: CodeRunner calls ScriptRuntime.new() on every
+// script run, giving each run a fresh GDScript object – but the C++ instance
+// member `python_initialized` starts false on every new object, so the old
+// code tried to construct a second scoped_interpreter, which deadlocks CPython.
+//
+// Solution: keep interpreter and globals as process-level static pointers.
+// They are allocated on first use and intentionally never freed – the OS
+// reclaims memory at process exit, which is the correct shutdown path for an
+// embedded CPython interpreter.
+// ---------------------------------------------------------------------------
+static py::scoped_interpreter* g_interpreter = nullptr;
+static bool                    g_python_ready = false;
+static py::dict*               g_globals      = nullptr;  // shared exec namespace
+
 namespace godot {
 
 void ScriptRuntime::_bind_methods() {
@@ -15,77 +35,81 @@ void ScriptRuntime::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_last_output"), &ScriptRuntime::get_last_output);
     ClassDB::bind_method(D_METHOD("get_last_error"), &ScriptRuntime::get_last_error);
     ClassDB::bind_method(D_METHOD("is_python_ready"), &ScriptRuntime::is_python_ready);
+    ClassDB::bind_method(D_METHOD("reset_globals"), &ScriptRuntime::reset_globals);
 }
 
-ScriptRuntime::ScriptRuntime() : python_initialized(false) {
+ScriptRuntime::ScriptRuntime() {
     UtilityFunctions::print("ScriptRuntime created");
 }
 
 ScriptRuntime::~ScriptRuntime() {
-    // Python interpreter cleanup happens automatically via scoped_interpreter
+    // The interpreter is process-lifetime; do not shut it down here.
     UtilityFunctions::print("ScriptRuntime destroyed");
 }
 
 void ScriptRuntime::initialize_python() {
-    if (python_initialized) {
-        UtilityFunctions::print("Python already initialized");
+    // If the interpreter is already running (from a previous ScriptRuntime
+    // instance in this process), just reuse it – do NOT construct another one.
+    if (g_python_ready) {
+        UtilityFunctions::print("Python already initialized (reusing existing interpreter)");
         return;
     }
 
     try {
-        // Initialize Python interpreter (static, happens once)
-        static py::scoped_interpreter guard{};
-        python_initialized = true;
+        g_interpreter = new py::scoped_interpreter{};
+        g_python_ready = true;
+
+        // Seed the persistent globals namespace with __builtins__ so every
+        // script execution has access to built-ins (print, range, len, …).
+        g_globals = new py::dict{};
+        (*g_globals)["__builtins__"] = py::module_::import("builtins");
+
         UtilityFunctions::print("Python interpreter initialized successfully");
     } catch (const std::exception& e) {
         last_error = String("Failed to initialize Python: ") + e.what();
         UtilityFunctions::printerr(last_error);
-        python_initialized = false;
     }
 }
 
 bool ScriptRuntime::execute_script(const String& code) {
-    if (!python_initialized) {
+    if (!g_python_ready) {
         last_error = "Python not initialized. Call initialize_python() first.";
         UtilityFunctions::printerr(last_error);
         return false;
     }
 
     last_output = "";
-    last_error = "";
+    last_error  = "";
 
     try {
-        // Redirect stdout and stderr to capture output
         py::object sys = py::module_::import("sys");
-        py::object io = py::module_::import("io");
+        py::object io  = py::module_::import("io");
 
-        py::object stdout_capture = io.attr("StringIO")();
-        py::object stderr_capture = io.attr("StringIO")();
+        py::object stdout_cap = io.attr("StringIO")();
+        py::object stderr_cap = io.attr("StringIO")();
 
-        sys.attr("stdout") = stdout_capture;
-        sys.attr("stderr") = stderr_capture;
+        sys.attr("stdout") = stdout_cap;
+        sys.attr("stderr") = stderr_cap;
 
-        // Execute the Python code
-        py::exec(code.utf8().get_data());
+        // Execute in the persistent globals namespace so that names imported
+        // by one call (e.g. "from godot import *") remain available in
+        // subsequent calls (e.g. resume_async invocations from the async runner).
+        py::exec(code.utf8().get_data(), *g_globals);
 
-        // Get captured output
-        py::object stdout_value = stdout_capture.attr("getvalue")();
-        py::object stderr_value = stderr_capture.attr("getvalue")();
+        std::string out = py::cast<std::string>(stdout_cap.attr("getvalue")());
+        std::string err = py::cast<std::string>(stderr_cap.attr("getvalue")());
 
-        std::string output_str = py::cast<std::string>(stdout_value);
-        std::string error_str = py::cast<std::string>(stderr_value);
+        last_output = String(out.c_str());
 
-        last_output = String(output_str.c_str());
-
-        if (!error_str.empty()) {
-            last_error = String(error_str.c_str());
+        if (!err.empty()) {
+            last_error = String(err.c_str());
             UtilityFunctions::print("Script output: ", last_output);
             UtilityFunctions::printerr("Script errors: ", last_error);
         } else {
             UtilityFunctions::print("Script executed successfully. Output: ", last_output);
         }
 
-        return error_str.empty();
+        return err.empty();
 
     } catch (const py::error_already_set& e) {
         last_error = String("Python execution error: ") + e.what();
@@ -107,7 +131,19 @@ String ScriptRuntime::get_last_error() const {
 }
 
 bool ScriptRuntime::is_python_ready() const {
-    return python_initialized;
+    return g_python_ready;
+}
+
+void ScriptRuntime::reset_globals() {
+    if (!g_python_ready) return;
+
+    // Replace the globals dict with a fresh one containing only __builtins__.
+    // This clears all user-defined names from the previous run without
+    // touching the interpreter state itself.
+    delete g_globals;
+    g_globals = new py::dict{};
+    (*g_globals)["__builtins__"] = py::module_::import("builtins");
+    UtilityFunctions::print("ScriptRuntime: globals reset");
 }
 
 } // namespace godot

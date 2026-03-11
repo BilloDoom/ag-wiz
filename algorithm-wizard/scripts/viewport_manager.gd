@@ -225,6 +225,30 @@ func get_current_scene_root() -> Node:
 		return get_scene_root(current_scene_context)
 	return null
 
+func clear_scene(scene_id: String = "") -> void:
+	"""Remove all drawn primitives and UI labels from a scene without destroying the scene itself."""
+	var target_id = scene_id if scene_id != "" else current_scene_context
+	if target_id == "" or not scenes.has(target_id):
+		push_error("ViewportManager: clear_scene – scene '%s' not found" % target_id)
+		return
+
+	var scene_data = scenes[target_id]
+
+	# Remove all drawing children from the scene root, keeping the UILayer node
+	var root = scene_data["root"]
+	for child in root.get_children():
+		if child.name == "UILayer":
+			continue
+		child.queue_free()
+
+	# Remove all children from the UILayer (labels, lines, etc.)
+	if scene_data.has("ui_layer"):
+		var ui_layer = scene_data["ui_layer"]
+		for child in ui_layer.get_children():
+			child.queue_free()
+
+	print("ViewportManager: Cleared scene '%s'" % target_id)
+
 # Drawing API Wrappers (delegates to DrawingAPI3D and DrawingAPI2D)
 # These wrappers allow the Python bridge to continue working without rebuilding
 
@@ -325,6 +349,43 @@ func create_ui_label(label_id: String, text: String, position: Vector2, font_siz
 
 	print("ViewportManager: Created UI label '%s' in scene '%s'" % [label_id, target_scene_id])
 	return label
+
+func create_world_label(label_id: String, text: String, position: Vector2, font_size: int = 16, color: Color = Color.WHITE, scene_id: String = "") -> Node:
+	"""Create a label anchored in world space (moves with camera, stays on top of drawn primitives)."""
+	var target_scene_id = scene_id if scene_id != "" else current_scene_context
+
+	if target_scene_id == "" or not scenes.has(target_scene_id):
+		push_error("ViewportManager: create_world_label – scene '%s' not found" % target_scene_id)
+		return null
+
+	var scene_data = scenes[target_scene_id]
+	if scene_data["type"] != "2d":
+		push_error("ViewportManager: world labels only supported for 2D scenes")
+		return null
+
+	# A Label (Control) must live under a CanvasItem to render.
+	# We wrap it in a Node2D so the position is in world space and the label
+	# follows the camera exactly like any other drawn primitive.
+	var wrapper = Node2D.new()
+	wrapper.name = label_id
+	wrapper.position = position
+	wrapper.z_index = 10  # render above bars
+
+	var label = Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	# Centre the label horizontally around the wrapper origin
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# Offset so the bottom of the label sits at the wrapper position
+	label.position = Vector2(-50, -font_size - 2)
+
+	wrapper.add_child(label)
+	scene_data["root"].add_child(wrapper)
+
+	return wrapper
 
 func draw_ui_line(line_id: String, from_pos: Vector2, to_pos: Vector2, color: Color = Color.WHITE, width: float = 2.0, scene_id: String = "") -> Node:
 	"""Draw a line on the UI canvas layer"""

@@ -17,6 +17,9 @@ const CAMERA_CONTROLLER_3D = preload("res://scripts/camera_api/camera_controller
 const CAMERA_CONTROLLER_2D = preload("res://scripts/camera_api/camera_controller_2d.gd")
 
 func _ready():
+	if Engine.is_editor_hint():
+		return
+
 	# Enable stretch to allow automatic viewport scaling
 	if viewport_container:
 		viewport_container.stretch = true
