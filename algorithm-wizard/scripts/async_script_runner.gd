@@ -69,9 +69,22 @@ func on_generator_complete() -> void:
 	if continue_button:
 		continue_button.visible = false
 
+func _flush_sandbox_warnings(output: String) -> void:
+	"""Forward any SANDBOX_WARN lines to CodeRunner's flush helper."""
+	var code_runner = get_parent()
+	if not code_runner or not code_runner.has_method("_flush_output"):
+		return
+	# Only pass lines that are warnings – normal output was already handled
+	# by the first execute_script call.
+	var warn_only := PackedStringArray()
+	for line in output.split("\n"):
+		if line.begins_with("SANDBOX_WARN:"):
+			warn_only.append(line)
+	if warn_only.size() > 0:
+		code_runner._flush_output("\n".join(warn_only))
+
 func _resume_generator() -> void:
 	"""Resume the Python generator by calling resume_async()"""
-	# Get the script runtime to execute Python code
 	var code_runner = get_parent()
 	if !code_runner:
 		printerr("AsyncScriptRunner: No parent CodeRunner found")
@@ -82,11 +95,13 @@ func _resume_generator() -> void:
 		printerr("AsyncScriptRunner: No ScriptRuntime found")
 		return
 
-	# Call the Python resume_async() function
+	# First resume call advances the generator one step and captures any
+	# print() / SANDBOX_WARN output produced during that step.
 	var success = script_runtime.execute_script("from godot import resume_async; result = resume_async()")
+	if success:
+		_flush_sandbox_warnings(script_runtime.get_last_output())
 
 	if success:
-		# Check what the result was (wait, input, complete, error)
 		var check_code = """
 import sys
 from io import StringIO
@@ -104,12 +119,11 @@ if result and isinstance(result, dict):
     elif result_type == 'error':
         print('ASYNC_ERROR:' + result.get('message', 'Unknown error'))
 """
-
 		success = script_runtime.execute_script(check_code)
 		if success:
 			var output = script_runtime.get_last_output()
+			_flush_sandbox_warnings(output)
 
-			# Parse the output to determine next action
 			if "ASYNC_RESULT:wait:" in output:
 				var parts = output.split("ASYNC_RESULT:wait:")
 				if parts.size() > 1:

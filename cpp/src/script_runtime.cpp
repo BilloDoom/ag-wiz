@@ -64,7 +64,70 @@ void ScriptRuntime::initialize_python() {
         g_globals = new py::dict{};
         (*g_globals)["__builtins__"] = py::module_::import("builtins");
 
+        // ---------------------------------------------------------------
+        // Sandbox: replace dangerous builtins and block restricted modules.
+        //
+        // Blocked builtins  : open, __import__ (for os/sys/socket/etc.)
+        // Blocked modules   : os, sys, socket, urllib, requests, http,
+        //                     subprocess, shutil, pathlib, ftplib, smtplib
+        //
+        // Any call to a blocked function prints a SANDBOX_WARN: sentinel
+        // line which code_runner.gd intercepts and shows in magenta in the
+        // in-app output panel.  The Godot console also gets a rich-colour
+        // print via UtilityFunctions::print_rich.
+        // ---------------------------------------------------------------
+        const char* sandbox_code = R"PYEOF(
+import sys as _sys
+import builtins as _builtins
+
+_BLOCKED_MODULES = {
+    'os', 'os.path', 'sys', 'socket', 'ssl',
+    'urllib', 'urllib.request', 'urllib.parse', 'urllib.error',
+    'http', 'http.client', 'http.server',
+    'requests', 'httpx', 'aiohttp',
+    'subprocess', 'shutil', 'pathlib',
+    'ftplib', 'smtplib', 'imaplib', 'poplib',
+    'paramiko', 'fabric',
+    'ctypes', 'cffi', 'winreg', 'msvcrt',
+    'multiprocessing', 'threading',
+}
+
+def _sandbox_warn(msg):
+    # Sentinel prefix for code_runner.gd to intercept
+    print('SANDBOX_WARN:' + msg)
+
+def _blocked_open(*args, **kwargs):
+    _sandbox_warn('open() is not allowed – file system access is disabled.')
+    return None
+
+def _blocked_import(name, *args, **kwargs):
+    top = name.split('.')[0]
+    if top in _BLOCKED_MODULES or name in _BLOCKED_MODULES:
+        _sandbox_warn("import '" + name + "' is not allowed – this module is restricted.")
+        # Return a dummy module so attribute access doesn't immediately crash.
+        # __getattr__ on a module instance takes only the attribute name (no self).
+        import types as _types
+        dummy = _types.ModuleType(name)
+        _n = name  # capture for closure
+        def _dummy_getattr(k):
+            _sandbox_warn("'" + _n + "." + k + "' is not allowed")
+            return lambda *a, **kw: None
+        dummy.__getattr__ = _dummy_getattr
+        return dummy
+    return _real_import(name, *args, **kwargs)
+
+_real_import = _builtins.__import__
+_builtins.open   = _blocked_open
+_builtins.__import__ = _blocked_import
+
+# Also shadow them in the globals dict directly so 'open(...)' at module
+# level resolves to the blocked version even without going through __import__.
+open = _blocked_open
+)PYEOF";
+
+        py::exec(sandbox_code, *g_globals);
         UtilityFunctions::print("Python interpreter initialized successfully");
+        UtilityFunctions::print_rich("[color=cyan]Sandbox active: file I/O and network access are disabled.[/color]");
     } catch (const std::exception& e) {
         last_error = String("Failed to initialize Python: ") + e.what();
         UtilityFunctions::printerr(last_error);

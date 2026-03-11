@@ -28,3 +28,8 @@ func log_error(error: String):
 	rich_text_output.push_color(Color.RED)
 	rich_text_output.append_text(error + "\n")
 	rich_text_output.pop()
+
+func log_warning(message: String):
+	rich_text_output.push_color(Color(1.0, 0.0, 1.0, 1.0))  # magenta
+	rich_text_output.append_text("[SANDBOX] " + message + "\n")
+	rich_text_output.pop()

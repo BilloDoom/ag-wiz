@@ -48,6 +48,23 @@ func _ready():
 	debug_panel.log_message("Viewport API available in Python")
 	debug_panel.log_message("Async execution system ready")
 
+func _flush_output(output: String) -> void:
+	"""Split raw Python stdout into normal lines and SANDBOX_WARN lines."""
+	if output == "":
+		return
+	var clean_lines: PackedStringArray = []
+	for line in output.split("\n"):
+		if line.begins_with("SANDBOX_WARN:"):
+			var msg = line.substr(len("SANDBOX_WARN:"))
+			debug_panel.log_warning(msg)
+			push_warning("[SANDBOX] " + msg)
+			print_rich("[color=magenta][SANDBOX] " + msg + "[/color]")
+		else:
+			clean_lines.append(line)
+	var clean = "\n".join(clean_lines).strip_edges()
+	if clean != "":
+		debug_panel.log_output(clean + "\n")
+
 func _on_run_pressed():
 	var code = code_edit.text
 	debug_panel.clear_output()
@@ -72,22 +89,16 @@ func _on_run_pressed():
 		viewport_manager.cleanup_all_scenes()
 
 	# Reset Python globals so the new script starts with a clean namespace.
-	# This ensures names from the previous run (generators, variables, etc.)
-	# don't bleed into the next execution while still preserving __builtins__.
 	script_runtime.reset_globals()
 
 	# Execute the script
 	var success = script_runtime.execute_script(code)
 
 	if success:
-		var output = script_runtime.get_last_output()
-		if output != "":
-			debug_panel.log_output(output)
-		else:
-			debug_panel.log_message("Script executed successfully (no output)")
+		_flush_output(script_runtime.get_last_output())
 	else:
-		var error = script_runtime.get_last_error()
-		debug_panel.log_error(error)
+		_flush_output(script_runtime.get_last_output())
+		debug_panel.log_error(script_runtime.get_last_error())
 
 func _on_continue_pressed():
 	# User pressed continue during async execution
