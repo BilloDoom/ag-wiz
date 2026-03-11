@@ -225,6 +225,43 @@ func get_current_scene_root() -> Node:
 		return get_scene_root(current_scene_context)
 	return null
 
+func get_scene_node(node_name: String, scene_id: String = "") -> Node:
+	"""Get a named direct child of a scene root by name."""
+	var target_id = scene_id if scene_id != "" else current_scene_context
+	if target_id == "" or not scenes.has(target_id):
+		return null
+	return scenes[target_id]["root"].get_node_or_null(NodePath(node_name))
+
+func remove_scene_node(node_name: String, scene_id: String = "") -> void:
+	"""Remove a named direct child of a scene root (instant, not queued)."""
+	var target_id = scene_id if scene_id != "" else current_scene_context
+	if target_id == "" or not scenes.has(target_id):
+		return
+	var node = scenes[target_id]["root"].get_node_or_null(NodePath(node_name))
+	if node:
+		node.get_parent().remove_child(node)
+		node.queue_free()
+
+func tween_node_position(node: Node, target_pos: Vector2, duration: float) -> void:
+	"""Smoothly move a Node2D to target_pos over duration seconds (fire-and-forget)."""
+	if not node:
+		return
+	var tween = node.create_tween()
+	tween.tween_property(node, "position", target_pos, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
+func tween_node_color(node: Node, target_color: Color, duration: float) -> void:
+	"""Smoothly change the color of a Polygon2D node over duration seconds (fire-and-forget)."""
+	if not node:
+		return
+	if node is Polygon2D:
+		var tween = node.create_tween()
+		tween.tween_property(node, "color", target_color, duration).set_trans(Tween.TRANS_LINEAR)
+
+func set_node_color(node: Node, color: Color) -> void:
+	"""Instantly set the color of a Polygon2D node."""
+	if node and node is Polygon2D:
+		node.color = color
+
 func clear_scene(scene_id: String = "") -> void:
 	"""Remove all drawn primitives and UI labels from a scene without destroying the scene itself."""
 	var target_id = scene_id if scene_id != "" else current_scene_context

@@ -764,18 +764,22 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("color") = py::make_tuple(1, 1, 1, 1));
 
         // 2D Drawing functions
-        godot_module.def("rect", [bridge](py::tuple size, py::tuple position, double rotation, py::tuple color, bool filled) {
+        godot_module.def("rect", [bridge](py::tuple size, py::tuple position, double rotation, py::tuple color, bool filled, const std::string& name) {
             Vector2 size_vec(size[0].cast<double>(), size[1].cast<double>());
             Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
             Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
 
-            bridge->draw_rect_2d(size_vec, pos_vec, rotation, col, filled);
+            Node* node = bridge->draw_rect_2d(size_vec, pos_vec, rotation, col, filled);
+            if (node && !name.empty()) {
+                node->set_name(String(name.c_str()));
+            }
         }, "Draw a rectangle in 2D",
            py::arg("size"),
            py::arg("position") = py::make_tuple(0, 0),
            py::arg("rotation") = 0.0,
            py::arg("color") = py::make_tuple(1, 1, 1, 1),
-           py::arg("filled") = true);
+           py::arg("filled") = true,
+           py::arg("name") = "");
 
         godot_module.def("circle", [bridge](double radius, py::tuple position, py::tuple color, bool filled, int segments) {
             Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
@@ -1069,14 +1073,66 @@ void ViewportBridge::setup_python_bindings() {
            py::arg("width") = 2.0,
            py::arg("scene_id") = "");
 
+        // --- Node animation helpers ---
+
+        godot_module.def("move_node", [bridge](const std::string& node_name, py::tuple target_pos, double duration, const std::string& scene_id) {
+            Vector2 pos(target_pos[0].cast<double>(), target_pos[1].cast<double>());
+            Node* manager = bridge->get_viewport_manager();
+            if (!manager) return;
+            Node* node = nullptr;
+            if (manager->has_method("get_scene_node"))
+                node = Object::cast_to<Node>(manager->call("get_scene_node", String(node_name.c_str()), String(scene_id.c_str())));
+            if (node && manager->has_method("tween_node_position"))
+                manager->call("tween_node_position", node, pos, (float)duration);
+        }, "Smoothly move a named scene node to a world-space position",
+           py::arg("node_name"),
+           py::arg("target_pos"),
+           py::arg("duration") = 0.3,
+           py::arg("scene_id") = "");
+
+        godot_module.def("color_node", [bridge](const std::string& node_name, py::tuple color, double duration, const std::string& scene_id) {
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+            Node* manager = bridge->get_viewport_manager();
+            if (!manager) return;
+            Node* node = nullptr;
+            if (manager->has_method("get_scene_node"))
+                node = Object::cast_to<Node>(manager->call("get_scene_node", String(node_name.c_str()), String(scene_id.c_str())));
+            if (node && manager->has_method("tween_node_color"))
+                manager->call("tween_node_color", node, col, (float)duration);
+        }, "Smoothly tween a named scene node to a new color",
+           py::arg("node_name"),
+           py::arg("color"),
+           py::arg("duration") = 0.2,
+           py::arg("scene_id") = "");
+
+        godot_module.def("snap_color_node", [bridge](const std::string& node_name, py::tuple color, const std::string& scene_id) {
+            Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
+            Node* manager = bridge->get_viewport_manager();
+            if (!manager) return;
+            Node* node = nullptr;
+            if (manager->has_method("get_scene_node"))
+                node = Object::cast_to<Node>(manager->call("get_scene_node", String(node_name.c_str()), String(scene_id.c_str())));
+            if (node && manager->has_method("set_node_color"))
+                manager->call("set_node_color", node, col);
+        }, "Instantly set the color of a named scene node",
+           py::arg("node_name"),
+           py::arg("color"),
+           py::arg("scene_id") = "");
+
         godot_module.def("world_label", [bridge](const std::string& label_id, const std::string& text, py::tuple position, int font_size, py::tuple color, const std::string& scene_id) {
             Vector2 pos_vec(position[0].cast<double>(), position[1].cast<double>());
             Color col(color[0].cast<float>(), color[1].cast<float>(), color[2].cast<float>(), color.size() > 3 ? color[3].cast<float>() : 1.0f);
 
             Node* manager = bridge->get_viewport_manager();
-            if (manager && manager->has_method("create_world_label")) {
+            if (!manager) return;
+
+            // Remove old wrapper with same name before creating new one so
+            // Godot does not auto-rename it (e.g. "title@2").
+            if (manager->has_method("remove_scene_node"))
+                manager->call("remove_scene_node", String(label_id.c_str()), String(scene_id.c_str()));
+
+            if (manager->has_method("create_world_label"))
                 manager->call("create_world_label", String(label_id.c_str()), String(text.c_str()), pos_vec, font_size, col, String(scene_id.c_str()));
-            }
         }, "Create a world-space label that moves with the camera",
            py::arg("label_id"),
            py::arg("text"),
